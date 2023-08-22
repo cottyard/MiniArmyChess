@@ -39,11 +39,6 @@ class ServerGameRound
         game_round_store[this.id] = this;
     }
 
-    status(): GameStatus
-    {
-        return this.round.status();
-    }
-
     proceed(move: Move): ServerGameRound | null
     {
         let next_round = this.round.proceed(move)

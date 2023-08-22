@@ -58,8 +58,11 @@ export class Coordinate implements IHashable, ISerializable, ICopyable<Coordinat
 }
 
 export class CoordinateDelta {
-    equals(other: CoordinateDelta) {
+    equals(other: CoordinateDelta): boolean {
         return this.dx == other.dx && this.dy == other.dy
+    }
+    manhattan(): number {
+        return Math.abs(this.dx) + Math.abs(this.dy)
     }
     constructor(public dx: number, public dy: number) {
     }

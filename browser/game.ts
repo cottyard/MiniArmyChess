@@ -75,7 +75,7 @@ export class GameContext implements IGameContext
 
     update_status(): void
     {
-        switch (this.present.status())
+        switch (this.present.status)
         {
             case GameStatus.WonByPlayer1:
                 this.status = this.player == Player.P1 ? 
@@ -86,9 +86,6 @@ export class GameContext implements IGameContext
                 this.status = this.player == Player.P2 ?
                               GameContextStatus.Victorious : 
                               GameContextStatus.Defeated
-                break
-            case GameStatus.Tied:
-                this.status = GameContextStatus.Tied
                 break
             case GameStatus.Ongoing:
                 this.status = GameContextStatus.WaitForPlayer

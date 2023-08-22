@@ -15,17 +15,17 @@ export interface IBoardDisplay extends IComponent
     unfreeze_selection(): void;
 }
 
-const group_indicator_position = new Position(8*g.settings.grid_size, g.settings.grid_size)
+const group_indicator_position = new Position(7.5*g.settings.grid_size, g.settings.grid_size)
 
 export class BoardDisplay implements IBoardDisplay
 {
-    canvas: GameCanvas;
+    canvas: GameCanvas
 
-    hovering: Coordinate | null = null;
-    selected: Coordinate | null = null;
-    _selection_frozen: boolean = false;
+    hovering: Coordinate | null = null
+    selected: Coordinate | null = null
+    _selection_frozen: boolean = false
 
-    displaying_board: GameBoard;
+    displaying_board: GameBoard
     displaying_move: Move | null
 
     constructor(public game: IGameUiFacade)
@@ -34,14 +34,14 @@ export class BoardDisplay implements IBoardDisplay
             <HTMLCanvasElement> document.getElementById('background'),
             <HTMLCanvasElement> document.getElementById('static'),
             <HTMLCanvasElement> document.getElementById('animate'),
-            <HTMLCanvasElement> document.getElementById('animate-transparent'));
+            <HTMLCanvasElement> document.getElementById('animate-transparent'))
 
-        this.canvas.animate.addEventListener("mousedown", this.on_mouse_down.bind(this));
-        this.canvas.animate.addEventListener("mouseup", this.on_mouse_up.bind(this));
-        this.canvas.animate.addEventListener("mousemove", this.on_mouse_move.bind(this));
-        this.canvas.animate.addEventListener("touchstart", this.on_touch.bind(this));
-        this.canvas.animate.addEventListener("touchmove", this.on_touch.bind(this));
-        this.canvas.animate.addEventListener("touchend", this.on_touch.bind(this));
+        this.canvas.animate.addEventListener("mousedown", this.on_mouse_down.bind(this))
+        this.canvas.animate.addEventListener("mouseup", this.on_mouse_up.bind(this))
+        this.canvas.animate.addEventListener("mousemove", this.on_mouse_move.bind(this))
+        this.canvas.animate.addEventListener("touchstart", this.on_touch.bind(this))
+        this.canvas.animate.addEventListener("touchmove", this.on_touch.bind(this))
+        this.canvas.animate.addEventListener("touchend", this.on_touch.bind(this))
 
         this.canvas.paint_background()
         

@@ -9,12 +9,12 @@ export enum GameStatus
 {
     Ongoing,
     WonByPlayer1,
-    WonByPlayer2,
-    Tied
+    WonByPlayer2
 }
 
 export class GameRound implements ISerializable
 {
+    private _status: GameStatus = GameStatus.Ongoing
     private constructor(
         readonly round_count: number,
         readonly board: GameBoard,
@@ -24,42 +24,49 @@ export class GameRound implements ISerializable
     {
     }
 
-    next_group(): Group {
-        return (this.group_to_move + 1) % 4 as Group
-    }
-
     proceed(move: Move): GameRound
     {
-        let next_board = Rule.proceed(this.board, move);
+        let next_board = Rule.proceed(this.board, move)
+
+        let p1_alive = Rule.alive(next_board, 0) || Rule.alive(next_board, 2)
+        let p2_alive = Rule.alive(next_board, 1) || Rule.alive(next_board, 3)
+
+        if (!p1_alive || !p2_alive) {
+            if (!p1_alive && !p2_alive) {
+                if (this.group_to_move == 0 || this.group_to_move == 2) {
+                    this._status = GameStatus.WonByPlayer1
+                } else {
+                    this._status = GameStatus.WonByPlayer2
+                }
+            } else if (p1_alive) {
+                this._status = GameStatus.WonByPlayer1
+            } else {
+                this._status = GameStatus.WonByPlayer2
+            }
+        }
+
+        let next_group = this.group_to_move
+        if (this._status == GameStatus.Ongoing) {   
+            for (let i = 1; i < 4; ++i) {
+                let g = (this.group_to_move + i) % 4 as Group
+                if (Rule.alive(next_board, g)) {
+                    next_group = g
+                    break
+                }
+            }
+            if (next_group == this.group_to_move) throw Error("no living group")
+        }
 
         return new GameRound(
             this.round_count + 1,
             next_board,
-            this.next_group(),
-            move);
+            next_group,
+            move)
     }
 
-    status(): GameStatus
+    get status(): GameStatus
     {
-        // let king_1 = Rule.count_unit(this.board.unit, Player.P1, King);
-        // let king_2 = Rule.count_unit(this.board.unit, Player.P2, King);
-        // if (king_1 && king_2)
-        // {
-        //     return GameStatus.Ongoing;
-        // }
-        // else if (king_1)
-        // {
-        //     return GameStatus.WonByPlayer1;
-        // }
-        // else if (king_2)
-        // {
-        //     return GameStatus.WonByPlayer2;
-        // }
-        // else
-        // {
-        //     
-        // }
-        return GameStatus.Tied
+        return this._status
     }
 
     validate_move(move: Move): boolean{

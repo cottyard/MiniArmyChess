@@ -1,5 +1,5 @@
 import { Board, SerializableBoard } from "./board";
-import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, CoordinateDelta, Group, Infantry, Mine, Move, Player, Scout, Tank, Unit, UnitConstructor} from "./entity";
+import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Tank, Unit, UnitConstructor} from "./entity";
 import { g } from "./global";
 import { HashMap, HashSet } from "./language";
 
@@ -115,21 +115,34 @@ function create_connection_map(connections: Connection[]): HashMap<Coordinate, C
 export const rail_map: HashMap<Coordinate, Coordinate[]> = create_connection_map(rails)
 export const road_map: HashMap<Coordinate, Coordinate[]> = create_connection_map(roads)
 
-export const RailJoint = function () {
-    let j = new HashMap<Coordinate, [CoordinateDelta, CoordinateDelta]>()
-    j.put(new Coordinate(4, 3), [new CoordinateDelta(1, 0), new CoordinateDelta(0, -1)])
-    j.put(new Coordinate(3, 4), [new CoordinateDelta(0, 1), new CoordinateDelta(-1, 0)])
-    j.put(new Coordinate(6, 3), [new CoordinateDelta(-1, 0), new CoordinateDelta(0, -1)])
-    j.put(new Coordinate(7, 4), [new CoordinateDelta(0, 1), new CoordinateDelta(1, 0)])
-    j.put(new Coordinate(4, 7), [new CoordinateDelta(1, 0), new CoordinateDelta(0, 1)])
-    j.put(new Coordinate(3, 6), [new CoordinateDelta(0, -1), new CoordinateDelta(-1, 0)])
-    j.put(new Coordinate(6, 7), [new CoordinateDelta(-1, 0), new CoordinateDelta(0, 1)])
-    j.put(new Coordinate(7, 6), [new CoordinateDelta(0, -1), new CoordinateDelta(1, 0)])
+export const rail_joint = function () {
+    let j = new HashMap<Coordinate, Coordinate>()
+    j.put(new Coordinate(4, 3), new Coordinate(4, 2))
+    j.put(new Coordinate(3, 4), new Coordinate(2, 4))
+    j.put(new Coordinate(6, 3), new Coordinate(6, 2))
+    j.put(new Coordinate(7, 4), new Coordinate(8, 4))
+    j.put(new Coordinate(4, 7), new Coordinate(4, 8))
+    j.put(new Coordinate(3, 6), new Coordinate(2, 6))
+    j.put(new Coordinate(6, 7), new Coordinate(6, 8))
+    j.put(new Coordinate(7, 6), new Coordinate(8, 6))
     return j
 }()
 
+
 export class Rule
 {
+    static alive(board: GameBoard, group: Group): boolean {
+        let alive = false
+        board.unit.iterate_units((unit, coord) => {
+            if (unit.group == group) {
+                if (this.get_move_options(board, coord).size() > 0) {
+                    alive = true
+                }
+            }
+        })
+        return alive
+    }
+
     static proceed(board: GameBoard, move: Move): GameBoard {
         let b = board.copy()
         let attacker = b.unit.at(move.from)
@@ -145,20 +158,16 @@ export class Rule
             keep_attacker = true
         }
         else {
-            
             if (defender.type == Base) {
+                if (attacker.type != Bomb) keep_attacker = true
                 let dg = defender.group
                 b.unit.iterate_units((unit, coord) => {
                     if (unit.group == dg) {
                         b.unit.remove(coord)
                     }
                 })
-            } else if (attacker.type == Bomb || defender.type == Bomb 
-                    || attacker.type == defender.type) {
-                // no action needed here
-            } else if (attacker.type == Scout) {
-                // todo: reveal defender
-                keep_defender = true
+            } else if (attacker.type == Bomb || defender.type == Bomb) {
+                // no action needed
             } else if (defender.type == Mine) {
                 if (attacker.type == Infantry) {
                     keep_attacker = true
@@ -167,6 +176,15 @@ export class Rule
                 }
             } else if (attacker.type == Artillery) {
                 keep_attacker = true
+            } else if (attacker.type == defender.type) {
+                // no action needed
+            } else if (attacker.type == Scout) {
+                // todo: reveal defender
+                if (defender.type == Artillery) {
+                    keep_attacker = true
+                } else {
+                    keep_defender = true
+                }
             } else if (attacker.type == Airforce) {
                 keep_attacker = true
             } else if (attacker.type == Tank) {
@@ -219,29 +237,48 @@ export class Rule
             }
         }
 
-        function collect_along_rail(start: Coordinate, direction: CoordinateDelta) {
-            if (!rail_map.has(start)) return
-            let status = collect(start)
+        function collect_along_rail(from: Coordinate, to: Coordinate) {
+            let status = collect(to)
             if (status == "attack" || status == "occupied") return
-            let expected = start.add(direction)
-            if (expected == undefined) return
-            let cons = rail_map.get(start)!
-            for (let c of cons) {
-                if (options.has(c)) continue
-                if (c.equals(expected)) collect_along_rail(c, direction)
-                if (RailJoint.has(c)) {
-                    let [from_direcion, to_direction] = RailJoint.get(c)!
-                    if (from_direcion.equals(direction)) collect_along_rail(c, to_direction)
+            let nexts = rail_map.get(to)!
+
+            let direction = to.delta(from)
+            for (let next of nexts) {
+                if (options.has(next)) continue
+                let new_direction = next.delta(to)
+
+                if (direction.equals(new_direction)) {
+                    // keep straight
+                    collect_along_rail(to, next)
+                }
+
+                if (direction.manhattan() > 1) {
+                    // already in the turn
+                    let after_joint = rail_joint.get(to)
+                    if (after_joint == undefined) throw Error('expect joint')
+                    collect_along_rail(to, after_joint)
+                }
+                
+                if (new_direction.manhattan() > 1) {
+                    // about to go into a turn
+                    let before_joint = rail_joint.get(to)
+                    if (before_joint == undefined) throw Error('expect joint')
+                    if (before_joint.equals(from)) {
+                        // a joint can only be entered when piece is leaving
+                        // another joint
+                        collect_along_rail(to, next)
+                    }
                 }
             }
         }
 
+        options.put(at)
         if (rail_map.has(at)) {
             for (let next of rail_map.get(at)!) {
-                let direction = next.delta(at)
-                collect_along_rail(next, direction)
+                collect_along_rail(at, next)
             }
         }
+        options.remove(at)
 
         return options
     }

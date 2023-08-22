@@ -49,28 +49,32 @@ export class HashMap<K extends IHashable, V>
 
 export class HashSet<V extends IHashable>
 {
-    private map = new Map<string, V>();
-    constructor(init: V[] = [])
-    {
+    private map = new Map<string, V>()
+    constructor(init: V[] = []){
         for (let value of init)
         {
-            this.put(value);
+            this.put(value)
         }
     }
 
-    put(value: V): void
-    {
-        this.map.set(value.hash(), value);
+    put(value: V): void{
+        this.map.set(value.hash(), value)
     }
 
-    has(value: V): boolean
-    {
-        return this.map.get(value.hash()) != undefined;
+    remove(value: V): void {
+        this.map.delete(value.hash())
     }
 
-    as_list(): V[]
-    {
-        return Array.from(this.map.values());
+    has(value: V): boolean{
+        return this.map.get(value.hash()) != undefined
+    }
+
+    as_list(): V[]{
+        return Array.from(this.map.values())
+    }
+
+    size(): number {
+        return this.map.size
     }
 }
 
