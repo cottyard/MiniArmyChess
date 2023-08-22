@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "@capacitor/android": "^3.6.0",
+    "@capacitor/core": "^3.6.0",
+    "browserify": "^17.0.0",
+    "tsify": "^5.0.4",
+    "typescript": "^4.7.4",
+    "uglify-js": "^3.16.1",
+    "watch": "^1.0.2"
+  },
+  "scripts": {
+    "watch": "watch 'npm run build' ../common ../browser",
+    "build": "browserify main.ts -p [ tsify --noImplicitAny] | uglifyjs -c -o ../target/lancer.js",
+    "build-dev": "browserify main.ts -d -p [ tsify --noImplicitAny] > ../target/lancer.js"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^3.6.0"
+  }
+}
