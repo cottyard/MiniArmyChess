@@ -3,8 +3,23 @@ import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mi
 import { g } from "./global";
 import { HashMap, HashSet } from "./language";
 
-//class InvalidMove extends Error { }
+/* judge table decies what happens when a piece duels another */
+// const DUEL_TIED = 0
+const DUEL_WON = 1
+const DUEL_LOST = 2
+const DUEL_IMPOSSIBLE = 3
+const judge_table: number[][] = [
+    [3, 3, 3, 3, 3, 3, 3, 3], // 1 Base
+    [0, 0, 0, 0, 0, 0, 0, 0], // 2 Bomb
+    [1, 0, 1, 1, 1, 1, 1, 2], // 3 Artillery
+    [1, 0, 1, 0, 2, 2, 2, 2], // 4 Scout
+    [1, 0, 1, 1, 2, 2, 2, 1], // 5 Infantry
+    [1, 0, 1, 1, 1, 0, 2, 2], // 6 Tank
+    [1, 0, 1, 1, 1, 1, 0, 2], // 7 Airforce
+    [3, 3, 3, 3, 3, 3, 3, 3]  // 8 Mine
+]
 
+//class InvalidMove extends Error { }
 class Connection {
      constructor(public grid_1: Coordinate, public grid_2: Coordinate) {
      }
@@ -128,6 +143,44 @@ export const rail_joint = function () {
     return j
 }()
 
+// function auto_reconing() {
+//     let all = [
+//         [3,4,5,6,7],[3,4,5,6,7],[3,4,5,6,7],
+//         [2,3,4,5,6,7],[2,3,4,5,6,7],
+//         [2,3,4,5,6,7,8],[2,3,4,5,6,7,8],[2,3,4,5,6,7,8],
+//         [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8]
+//     ]
+//     let count = [2,3,3,3,3,2,2,2,2,1,1,1]
+    
+//     function solve(piece: number): number {
+//         let choices = all[piece]
+//         let solutions = 0
+//         for (let i = 0; i < choices.length; ++i) {
+//             let piece_type = choices[i]
+//             if (count[piece_type] == 0) continue
+//             if (piece == all.length - 1) {
+//                 ++solutions
+//                 //picked.push(piece_type)
+//                 //solution_records.push([...picked])
+//                 //picked.pop()
+//             } else {
+//                 --count[piece_type]
+//                 //picked.push(piece_type)
+//                 solutions += solve(piece + 1)
+//                 //picked.pop()
+//                 ++count[piece_type]
+//             }
+//         }
+//         return solutions
+//     }
+    
+//     console.log(solve(0))
+//     //console.log(solution_records.length)
+//     //for (let i = 0; i < 20; ++i)
+//         //console.log(solution_records[i])
+    
+// }
+
 
 export class Rule
 {
@@ -158,43 +211,26 @@ export class Rule
             keep_attacker = true
         }
         else {
+            let result = judge_table[attacker.type.id - 1][defender.type.id - 1]
+            if (result >= DUEL_IMPOSSIBLE) {
+                throw Error('impossible duel')
+            }
+            if (result == DUEL_WON) {
+                keep_attacker = true
+            } else if (result == DUEL_LOST) {
+                keep_defender = true
+                if (attacker.type == Scout) {
+                    // todo: reveal defender
+                }
+            }
+
             if (defender.type == Base) {
-                if (attacker.type != Bomb) keep_attacker = true
                 let dg = defender.group
                 b.unit.iterate_units((unit, coord) => {
                     if (unit.group == dg) {
                         b.unit.remove(coord)
                     }
                 })
-            } else if (attacker.type == Bomb || defender.type == Bomb) {
-                // no action needed
-            } else if (defender.type == Mine) {
-                if (attacker.type == Infantry) {
-                    keep_attacker = true
-                } else {
-                    keep_defender = true
-                }
-            } else if (attacker.type == Artillery) {
-                keep_attacker = true
-            } else if (attacker.type == defender.type) {
-                // no action needed
-            } else if (attacker.type == Scout) {
-                // todo: reveal defender
-                if (defender.type == Artillery) {
-                    keep_attacker = true
-                } else {
-                    keep_defender = true
-                }
-            } else if (attacker.type == Airforce) {
-                keep_attacker = true
-            } else if (attacker.type == Tank) {
-                keep_attacker = defender.type != Airforce
-            } else if (attacker.type == Infantry) {
-                if (defender.type == Airforce || defender.type == Tank) {
-                    keep_defender = true
-                } else {
-                    keep_attacker = true
-                }
             }
         }
 
@@ -203,7 +239,6 @@ export class Rule
         } else if (!keep_defender) {
             b.unit.remove(move.to)
         }
-
         return b
     }
 

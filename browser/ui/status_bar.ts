@@ -1,7 +1,20 @@
-import { Player, Players } from "../../common/entity";
-import { IGameUiFacade } from "../game";
-import { IBoardDisplay } from "./board_display";
-import { IComponent, DomHelper } from "./dom_helper";
+//import { Player, Players } from "../../common/entity"
+import { Unit, all_unit_types } from "../../common/entity"
+import { GameStatus } from "../../common/game_round"
+import { IGameUiFacade } from "../game"
+import { IBoardDisplay } from "./board_display"
+import { type_to_literal } from "./canvas_entity"
+import { IComponent, DomHelper } from "./dom_helper"
+
+function observation_literal(unit: Unit): string {
+    let l = []
+    for (let t of all_unit_types) {
+        if (unit.skeptical(t)) {
+            l.push(type_to_literal(t))
+        }
+    }
+    return l.join(',')
+}
 
 export class StatusBar implements IComponent
 {
@@ -10,59 +23,76 @@ export class StatusBar implements IComponent
         public board_display: IBoardDisplay,
         public game: IGameUiFacade)
     {
-        setInterval(() =>
-        {
-            this.render();
-        }, 1000);
+        // setInterval(() =>
+        // {
+        //     this.render()
+        // }, 1000)
     }
 
-    render()
+    render(unit: Unit | undefined = undefined)
     {
-        this.dom_element.innerHTML = "";
+        this.dom_element.innerHTML = ""
 
         DomHelper.apply_style(this.dom_element, {
             display: "flex",
             flexDirection: "row",
             justifyContent: "flex-end",
             height: "40px"
-        });
+        })
 
-        for (let player of Players.both())
-        {
-            // this.dom_element.appendChild(this.player_status(
-            //     player,
-            //     this.game.context.players_name[player] || "",
-            //     player == this.game.context.player
-            // ));
+        // for (let player of Players.both())
+        // {
+        //     // this.dom_element.appendChild(this.player_status(
+        //     //     player,
+        //     //     this.game.context.players_name[player] || "",
+        //     //     player == this.game.context.player
+        //     // ))
+        // }
 
-            if (player == Player.P1)
+        let round_number = this.game.context.present.round_count
+        this.dom_element.appendChild(DomHelper.create_text(
+            `Step ${ round_number }`,
             {
-                let round_number = this.game.context.present.round_count;
-                this.dom_element.appendChild(DomHelper.create_text(
-                    `Round ${ round_number }`,
-                    {
-                        'text-align': 'center',
-                        fontWeight: "bold",
-                        flexGrow: 1,
-                    }));
-            }
+                'text-align': 'left',
+                fontWeight: "bold",
+                flexGrow: 1,
+            }))
+
+        if (this.game.context.present.status != GameStatus.Ongoing) {
+            this.dom_element.appendChild(DomHelper.create_text(
+                "End",
+                {
+                    'text-align': 'center',
+                    fontWeight: "bold",
+                    flexGrow: 1,
+                }))
+        }
+
+        if (unit) {
+            this.dom_element.appendChild(DomHelper.create_text(
+                observation_literal(unit),
+                {
+                    'text-align': 'right',
+                    fontWeight: "bold",
+                    flexGrow: 1,
+                }))
         }
     }
 
-    timestamp(consumed: number)
-    {
-        function display(v: number): string
-        {
-            let display = v.toString();
-            return display.length < 2 ? '0' + display : display;
-        }
-        let _seconds = Math.floor(consumed / 1000);
-        let seconds = _seconds % 60;
-        let _minutes = (_seconds - seconds) / 60;
-        let minutes = _minutes % 60;
-        let _hours = (_minutes - minutes) / 60;
-        return `${ display(_hours) }:${ display(minutes) }:${ display(seconds) }`;
-    }
+    // timestamp(consumed: number)
+    // {
+    //     function display(v: number): string
+    //     {
+    //         let display = v.toString()
+    //         return display.length < 2 ? '0' + display : display
+    //     }
+    //     let _seconds = Math.floor(consumed / 1000)
+    //     let seconds = _seconds % 60
+    //     let _minutes = (_seconds - seconds) / 60
+    //     let minutes = _minutes % 60
+    //     let _hours = (_minutes - minutes) / 60
+    //     return `${ display(_hours) }:${ display(minutes) }:${ display(seconds) }`
+    // }
 
     // player_status(
     //     player: Player,
@@ -77,32 +107,32 @@ export class StatusBar implements IComponent
     //         marginRight: "10px",
     //         alignItems: "center",
     //         fontWeight: is_me ? "bold" : "normal",
-    //     });
+    //     })
 
     //     // div.appendChild(DomHelper.create_text(name, {
     //     //     color: Players.color[player]
-    //     // }));
+    //     // }))
 
-    //     // let text = null;
+    //     // let text = null
     //     // if (this.game.context.players_moved[player])
     //     // {
-    //     //     text = '🟢';
+    //     //     text = '🟢'
     //     // }
     //     // else
     //     // {
-    //     //     text = '🟡';
+    //     //     text = '🟡'
     //     // }
     //     // if (text)
     //     // {
     //     //     div.appendChild(DomHelper.create_text(text, {
     //     //         marginLeft: "10px"
-    //     //     }));
+    //     //     }))
     //     // }
 
-    //     // let consumed = this.game.context.consumed_msec[player];
+    //     // let consumed = this.game.context.consumed_msec[player]
     //     // if (this.game.context.is_waiting() && !this.game.context.players_moved[player])
     //     // {
-    //     //     consumed += Date.now() - this.game.context.round_begin_time;
+    //     //     consumed += Date.now() - this.game.context.round_begin_time
     //     // }
         
     //     // div.appendChild(DomHelper.create_text(
@@ -110,8 +140,8 @@ export class StatusBar implements IComponent
     //     //     {
     //     //         marginLeft: "3px"
     //     //     }
-    //     // ));
+    //     // ))
 
-    //     return div;
+    //     return div
     // }
 }

@@ -118,12 +118,12 @@ export function opponent(player: Player)
     return player == Player.P1 ? Player.P2 : Player.P1
 }
 
-export function deserialize_player(payload: string): Player
+export function deserialize_group(payload: string): Player
 {
-    return <Player> Player[<keyof typeof Player>('P' + payload)]
+    return <Player> Player[<keyof typeof Player>('g' + payload)]
 }
 
-export function serialize_player(player: Player)
+export function serialize_group(player: Player)
 {
     return JSON.stringify(player)
 }
@@ -169,12 +169,28 @@ export enum ActionType
 }
 
 export abstract class Unit implements ISerializable, ICopyable<Unit>{
+    // each bit represents the possibility of being the corresponding type
+    // in perspective of the opponent observer
+    // higher bit means bigger type id
+    public observation = 0b11111111
+    public revealed = false
+
     constructor(public group: Group){
     }
 
     get owner(): Player {
         if (this.group % 2 == 0) return Player.P1
         else return Player.P2
+    }
+
+    skeptical(type: UnitConstructor): boolean {
+        return ((1 << (type.id - 1)) & this.observation) != 0
+    }
+
+    rule_out(type: UnitConstructor): void {
+        if (this.skeptical(type)) {
+            this.observation ^= (1 << (type.id - 1))
+        }
     }
 
     serialize(): string{
@@ -205,47 +221,40 @@ export const UnitConstructor: UnitConstructor = class _ extends Unit{
 
     static deserialize(payload: string): Unit
     {
-        let display: string, owner: string
-        [display, owner] = <[string, string, string]> JSON.parse(payload)
+        let display: string, group: string
+        [display, group] = <[string, string, string]> JSON.parse(payload)
 
         let type = unit_type_by_name.get(display)
         if (!type)
         {
             throw new Error('Unit.deserialize: no constructor')
         }
-        let unit = new type(deserialize_player(owner))
+        let unit = new type(deserialize_group(group))
         return unit
     }
 }
 
-export class Scout extends UnitConstructor{
+export class Base extends UnitConstructor{
     static readonly id = 1
 }
-
-export class Artillery extends UnitConstructor{
+export class Bomb extends UnitConstructor{
     static readonly id = 2
 }
-
-export class Bomb extends UnitConstructor{
+export class Artillery extends UnitConstructor{
     static readonly id = 3
 }
-
-export class Infantry extends UnitConstructor{
+export class Scout extends UnitConstructor{
     static readonly id = 4
 }
-
-export class Tank extends UnitConstructor{
+export class Infantry extends UnitConstructor{
     static readonly id = 5
 }
-
-export class Airforce extends UnitConstructor{
+export class Tank extends UnitConstructor{
     static readonly id = 6
 }
-
-export class Base extends UnitConstructor{
+export class Airforce extends UnitConstructor{
     static readonly id = 7
 }
-
 export class Mine extends UnitConstructor{
     static readonly id = 8
 }

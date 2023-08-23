@@ -1,18 +1,18 @@
 import { IGameUiFacade } from '../game'
-import { GameCanvas, Position } from './canvas';
-import { CanvasUnitFactory } from './canvas_entity';
-import { GameBoard, Rule } from '../../common/rule';
-import { Coordinate, Move } from '../../common/entity';
-import { g } from '../../common/global';
-import { IComponent } from './dom_helper';
-//import { event_box } from './ui';
+import { GameCanvas, Position } from './canvas'
+import { CanvasUnitFactory } from './canvas_entity'
+import { GameBoard, Rule } from '../../common/rule'
+import { Coordinate, Move } from '../../common/entity'
+import { g } from '../../common/global'
+import { IComponent } from './dom_helper'
+import { event_box } from './ui'
 
 export interface IBoardDisplay extends IComponent
 {
-    displaying_board: GameBoard;
-    highlight(coord: Coordinate): void;
-    freeze_selection(): void;
-    unfreeze_selection(): void;
+    displaying_board: GameBoard
+    highlight(coord: Coordinate): void
+    freeze_selection(): void
+    unfreeze_selection(): void
 }
 
 const group_indicator_position = new Position(7.5*g.settings.grid_size, g.settings.grid_size)
@@ -60,13 +60,13 @@ export class BoardDisplay implements IBoardDisplay
 
     highlight(coord: Coordinate)
     {
-        this.canvas.paint_grid_indicator(coord);
+        this.canvas.paint_grid_indicator(coord)
     }
 
     clear_animate(): void
     {
-        this.canvas.clear_canvas(this.canvas.am_ctx);
-        this.canvas.clear_canvas(this.canvas.am_ctx_t);
+        this.canvas.clear_canvas(this.canvas.am_ctx)
+        this.canvas.clear_canvas(this.canvas.am_ctx_t)
     }
 
     get_coordinate(event: MouseEvent): Coordinate | undefined
@@ -79,32 +79,32 @@ export class BoardDisplay implements IBoardDisplay
 
     on_touch(event: TouchEvent)
     {
-        let touches = event.changedTouches;
-        let first = touches[0];
-        let type = "";
+        let touches = event.changedTouches
+        let first = touches[0]
+        let type = ""
 
         switch (event.type)
         {
             case "touchstart":
-                type = "mousedown";
-                break;
+                type = "mousedown"
+                break
             case "touchmove":
-                type = "mousemove";
-                break;
+                type = "mousemove"
+                break
             case "touchend":
-                type = "mouseup";
-                break;
+                type = "mouseup"
+                break
         }
 
-        let simulated = document.createEvent("MouseEvent");
+        let simulated = document.createEvent("MouseEvent")
         simulated.initMouseEvent(
             type, true, true, window, 1,
             first.screenX, first.screenY,
             first.clientX, first.clientY, false,
-            false, false, false, 0, null);
+            false, false, false, 0, null)
 
-        first.target.dispatchEvent(simulated);
-        event.preventDefault();
+        first.target.dispatchEvent(simulated)
+        event.preventDefault()
     }
 
     on_mouse_move(event: MouseEvent): void
@@ -114,6 +114,9 @@ export class BoardDisplay implements IBoardDisplay
         if (!this.hovering?.equals(coord)){
             this.hovering = coord
             this.render_indicators()
+            event_box.emit(
+                "refresh status", 
+                this.game.context.present.board.unit.at(coord))
         }
     }
 
@@ -128,12 +131,12 @@ export class BoardDisplay implements IBoardDisplay
 
     freeze_selection(): void
     {
-        this._selection_frozen = true;
+        this._selection_frozen = true
     }
 
     unfreeze_selection(): void
     {
-        this._selection_frozen = false;
+        this._selection_frozen = false
     }
 
     get selection_frozen(): boolean{
@@ -145,21 +148,26 @@ export class BoardDisplay implements IBoardDisplay
         let c = this.get_coordinate(event)
         if (c == undefined) return
         this.hovering = c
+        let unit = this.game.context.present.board.unit.at(c)
+        let current_group = this.game.context.present.group_to_move
         if (this.selected == null){
             if (this.selection_frozen) return
-            let unit = this.game.context.present.board.unit.at(c)
-            if (unit == undefined) return
-            if (unit.group != this.game.context.present.group_to_move) return
+            if (unit == null) return
+            if (unit.group != current_group) return
             this.selected = c
         } else {
-            try {
-                let m = new Move(this.selected, this.hovering)
-                this.game.submit_move(m)
+            
+            if (unit != null && unit.group == current_group) {
+                this.selected = c
+            } else {
+                try {
+                    let m = new Move(this.selected, this.hovering)
+                    this.game.submit_move(m)
+                }
+                catch {}
+                this.selected = null
             }
-            catch {}
-            this.selected = null
         }
-        //event_box.emit("refresh ui", null)
         this.render()
     }
 

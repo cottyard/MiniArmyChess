@@ -43,59 +43,41 @@ export abstract class CanvasUnit
     paint(renderer: Renderer): void
     {
         renderer.circle(new Position(0, 0), 18, 2, this.color)
-        this.paint_unit(renderer);
+        this.paint_unit(renderer)
     }
 
-    abstract paint_unit(renderer: Renderer): void;
+    paint_unit(renderer: Renderer): void {
+        renderer.text(type_to_literal(this.unit.type), text_offset)
+    }
 }
 
 const text_offset = new Position(-12, 10)
 
+export function type_to_literal(t: UnitConstructor) {
+    return ["营", "炸", "炮", "侦", "兵", "坦", "飞", "雷"][t.id - 1]
+}
+
 class CanvasScout extends CanvasUnit{
-    paint_unit(renderer: Renderer): void{
-        renderer.text("侦", text_offset)
-    }
 }
 
 class CanvasArtillery extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("炮", text_offset)
-    }
 }
 
 class CanvasBomb extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("炸", text_offset)
-    }
 }
 
 class CanvasInfantry extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("兵", text_offset)
-    }
 }
 
 class CanvasTank extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("坦", text_offset)
-    }
 }
 
 class CanvasAirforce extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("飞", text_offset)
-    }
 }
 
 class CanvasBase extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("营", text_offset)
-    }
 }
 
 class CanvasMine extends CanvasUnit{
-    paint_unit(renderer: Renderer): void {
-        renderer.text("雷", text_offset)
-    }
 }
 

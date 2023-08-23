@@ -153,9 +153,9 @@ export class GameCanvas
 
     paint_group_indicator(position: Position)
     {
-        let size = 15
+        let size = 7
         using(new Renderer(this.st_ctx), (renderer) =>{
-            renderer.circle(position, size, 3, g.const.STYLE_GREEN_LIGHT)
+            renderer.circle(position, size, 2, g.const.STYLE_GREEN_LIGHT)
         })
     }
 
