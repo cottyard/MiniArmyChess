@@ -4,7 +4,7 @@ class Module
     readonly grid_count: number = 11
     readonly grid_center: number = 5
     
-    readonly const = {
+    readonly styles = {
         'STYLE_GREY': "rgb(228, 228, 228)",
         'STYLE_BLACKISH': "#555",
         'STYLE_BLACK': "#000",

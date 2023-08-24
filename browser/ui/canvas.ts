@@ -109,12 +109,12 @@ export class GameCanvas
                         continue
                     }
                     if (is_camp(c)) {
-                        renderer.circle(GameCanvas.get_grid_center(c), grid_size/2-10, 1, g.const.STYLE_GREY)
+                        renderer.circle(GameCanvas.get_grid_center(c), grid_size/2-10, 1, g.styles.STYLE_GREY)
                     }
                     else {
                         renderer.rectangle(
                             new Position(i * grid_size+10, j * grid_size+10),
-                            grid_size-20, grid_size-20, 1, g.const.STYLE_GREY)
+                            grid_size-20, grid_size-20, 1, g.styles.STYLE_GREY)
                     }
                 }
             }
@@ -128,7 +128,7 @@ export class GameCanvas
         let half_grid = g.settings.grid_size / 2 - 15 + size
         if (!style)
         {
-            style = g.const.STYLE_BLACK
+            style = g.styles.STYLE_BLACK
         }
         let style_ = style
         for ([p, q] of [[-1, -1], [-1, 1], [1, -1], [1, 1]])
@@ -154,7 +154,7 @@ export class GameCanvas
     {
         let size = 7
         using(new Renderer(this.st_ctx), (renderer) =>{
-            renderer.circle(position, size, 2, g.const.STYLE_GREEN_LIGHT)
+            renderer.circle(position, size, 2, g.styles.STYLE_GREEN_LIGHT)
         })
     }
 

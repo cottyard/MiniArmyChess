@@ -75,7 +75,10 @@ export enum Player
 }
 
 export type Group = 0 | 1 | 2 | 3
-
+export function which_player(group: Group): Player {
+    if (group == 0 || group == 2) return Player.P1
+    else return Player.P2
+}
 export type Players<T> =
     {
         [Player.P1]: T,
@@ -172,21 +175,26 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
     // each bit represents the possibility of being the corresponding type
     // in perspective of the opponent observer
     // higher bit means bigger type id
-    public observation = 0b11111111
+    private observation = 0b11111111
     public revealed = false
 
     constructor(public group: Group){
     }
 
     get owner(): Player {
-        if (this.group % 2 == 0) return Player.P1
-        else return Player.P2
+        return which_player(this.group)
     }
 
     skeptical(type_id: number): boolean {
         return ((1 << (type_id - 1)) & this.observation) != 0
     }
-
+    possible_types(): number[] {
+        let p = []
+        for (let t of all_unit_types) {
+            if (this.skeptical(t.id)) p.push(t.id)
+        }
+        return p
+    }
     lock_on(type_ids: number[]): void {
         for (let id = 1; id <= all_unit_types.length; ++id) {
             if (type_ids.find((i => i == id)) == undefined) {

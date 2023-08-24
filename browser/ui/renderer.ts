@@ -91,10 +91,10 @@ export class Renderer implements IDisposable
         this.ctx.stroke();
     }
 
-    text(text: string, position: Position, fill_style: string=g.const.STYLE_BLACK): void
+    text(text: string, position: Position, fill_style: string=g.styles.STYLE_BLACK, size=24): void
     {
         this.set_fill_color(fill_style)
-        this.ctx.font = "24px serif"
+        this.ctx.font = `${size}px serif`
         this.ctx.fillText(text, position.x, position.y)
     }
 

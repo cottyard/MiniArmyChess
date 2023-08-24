@@ -1,8 +1,8 @@
 import { IGameUiFacade } from '../game'
 import { GameCanvas, Position } from './canvas'
-import { CanvasUnitFactory } from './canvas_entity'
+import { CanvasUnitFactory, PaintMode } from './canvas_entity'
 import { GameBoard, Rule } from '../../common/rule'
-import { Coordinate, Move } from '../../common/entity'
+import { Coordinate, Move, which_player } from '../../common/entity'
 import { g } from '../../common/global'
 import { IComponent } from './dom_helper'
 import { event_box } from './ui'
@@ -173,7 +173,12 @@ export class BoardDisplay implements IBoardDisplay
     render_board(){
         this.canvas.clear_canvas(this.canvas.st_ctx)
         this.displaying_board.unit.iterate_units((unit, coord) => {
-            this.canvas.paint_unit(CanvasUnitFactory(unit), coord)
+            let current_player = which_player(this.game.context.present.group_to_move)
+            let mode = PaintMode.Normal
+            if (current_player != unit.owner) {
+                mode = PaintMode.Hidden
+            }
+            this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
 
         let gi = group_indicator_position
@@ -186,12 +191,12 @@ export class BoardDisplay implements IBoardDisplay
     render_indicators(): void{
         this.clear_animate()
         if (this.hovering){
-            this.canvas.paint_grid_indicator(this.hovering, g.const.STYLE_BLACK, 2)
+            this.canvas.paint_grid_indicator(this.hovering, g.styles.STYLE_BLACK, 2)
         }
         if (this.selected){
-            this.canvas.paint_grid_indicator(this.selected, g.const.STYLE_BLACK, 4)
+            this.canvas.paint_grid_indicator(this.selected, g.styles.STYLE_BLACK, 4)
             for (let c of Rule.get_move_options(this.game.context.present.board, this.selected).as_list()) {
-                this.canvas.paint_grid_indicator(c, g.const.STYLE_GREEN, 2, 10)
+                this.canvas.paint_grid_indicator(c, g.styles.STYLE_GREEN, 2, 10)
             }
         }
     }
