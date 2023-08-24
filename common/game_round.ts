@@ -1,7 +1,7 @@
 import { Board, create_serializable_board_ctor } from "./board";
 import { Group, Move, Unit, UnitConstructor, all_unit_types } from "./entity";
 import { ISerializable, randint } from "./language";
-import { GameBoard, Rule, get_initial_coordinates } from "./rule";
+import { GameBoard, Rule, starting_coordinates_by_group, unit_count_by_type } from "./rule";
 
 export class InsufficientSupply extends Error { }
 
@@ -76,20 +76,13 @@ export class GameRound implements ISerializable
 
     static set_out(board: Board<Unit>): void
     {
-        //let l = [...units_per_group]
         for (let group = 0; group < 4; ++group) {
-            // for (let i = 0; i < l.length; ++i) {
-            //     let swap_with = randint(l.length)
-            //     if (i != swap_with) {
-            //         let t = l[i]
-            //         l[i] = l[swap_with]
-            //         l[swap_with] = t
-            //     }
-            // }
             let layout_type_id = every_possible_layout[randint(every_possible_layout.length)]
-            let coords = get_initial_coordinates(group as Group)
+            let coords = starting_coordinates_by_group(group as Group)
             for (let i = 0; i < layout_type_id.length; ++i) {
-                board.put(coords[i], new all_unit_types[layout_type_id[i] - 1](group as Group))
+                let unit = new all_unit_types[layout_type_id[i] - 1](group as Group)
+                unit.lock_on(layout_allowed_types[i])
+                board.put(coords[i], unit)
             }
         }
     }
@@ -128,33 +121,39 @@ export class GameRound implements ISerializable
     }
 }
 
+const fst_row_types = [3,4,5,6,7]
+const snd_row_types = [2,3,4,5,6,7]
+const thd_row_types = [2,3,4,5,6,7,8]
+const lst_row_types = [1,2,3,4,5,6,7,8]
+const layout_allowed_types = [
+    fst_row_types,fst_row_types,fst_row_types,
+    snd_row_types,snd_row_types,
+    thd_row_types,thd_row_types,thd_row_types,
+    lst_row_types,lst_row_types,lst_row_types
+]
+
 const every_possible_layout: number[][] = (function () {
-    let all = [
-        [3,4,5,6,7],[3,4,5,6,7],[3,4,5,6,7],
-        [2,3,4,5,6,7],[2,3,4,5,6,7],
-        [2,3,4,5,6,7,8],[2,3,4,5,6,7,8],[2,3,4,5,6,7,8],
-        [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8]
-    ]
-    let piece_count = [-1, 1,1,1,1,3,1,1,2]
+    
+    let unit_count = [...unit_count_by_type]
     let picked: number[] = []
     let layouts: number[][] = []
     function solve(piece: number): number {
-        let choices = all[piece]
+        let choices = layout_allowed_types[piece]
         let solution_count = 0
         for (let i = 0; i < choices.length; ++i) {
-            let piece_type = choices[i]
-            if (piece_count[piece_type] == 0) continue
-            if (piece == all.length - 1) {
+            let unit_type = choices[i]
+            if (unit_count[unit_type - 1] == 0) continue
+            if (piece == layout_allowed_types.length - 1) {
                 ++solution_count
-                picked.push(piece_type)
+                picked.push(unit_type)
                 layouts.push([...picked])
                 picked.pop()
             } else {
-                --piece_count[piece_type]
-                picked.push(piece_type)
+                --unit_count[unit_type - 1]
+                picked.push(unit_type)
                 solution_count += solve(piece + 1)
                 picked.pop()
-                ++piece_count[piece_type]
+                ++unit_count[unit_type - 1]
             }
         }
         return solution_count

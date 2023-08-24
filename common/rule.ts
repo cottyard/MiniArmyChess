@@ -1,5 +1,5 @@
 import { Board, SerializableBoard } from "./board";
-import { Tank, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Armored, Unit, UnitConstructor, all_unit_types} from "./entity";
+import { Tank, Base, Coord, Coordinate, Group, Mine, Move, Player, Scout, Unit, UnitConstructor, all_unit_types} from "./entity";
 import { g } from "./global";
 import { HashMap, HashSet } from "./language";
 
@@ -35,9 +35,7 @@ class Connection {
 
 type Connectivity = [Coord, Coord]
 
-export const units_per_group: UnitConstructor[] = [
-    Scout, Artillery, Bomb, Infantry, Infantry, Infantry, Armored, Tank, Base, Mine, Mine
-]
+export const unit_count_by_type = [1,1,1,1,3,1,1,2]
 
 const connectivity_road_quarter: Connectivity[] = [
     [[4,0],[4,1]],[[4,0],[5,0]],[[5,0],[5,1]],[[5,0],[6,0]],[[6,0],[6,1]],
@@ -53,7 +51,7 @@ const connectivity_rail_quarter: Connectivity[] = [
     [[6,4],[5,4]],[[6,4],[6,5]],[[6,5],[5,5]]
 ]
 
-const starting_grids: Coordinate[] = [
+const starting_coordinates: Coordinate[] = [
     [4,3], [5, 3], [6, 3],
     [4,2], [6, 2],
     [4,1], [5, 1], [6, 1],
@@ -71,8 +69,8 @@ export function is_camp(coord: Coordinate): boolean {
     return false
 }
 
-export function get_initial_coordinates(group: Group) {
-    let coords = starting_grids
+export function starting_coordinates_by_group(group: Group) {
+    let coords = starting_coordinates
     for (let i = 0; i < group; ++i) {
         coords = coords.map((c) => rotate_counter_clockwise(c))
     }
@@ -214,6 +212,16 @@ export class Rule
         let board = _board.copy()
         let attacker = board.unit.at(move.from)
         if (attacker == null) throw new Error('null piece')
+
+        let normal_moves = this.get_move_options(board, move.from, false)
+        if (!normal_moves.has(move.to)) {
+            if (attacker.type != Scout) throw Error('expect scout')
+            attacker.reveal()
+        } else {
+            attacker.rule_out(Mine.id)
+            attacker.rule_out(Base.id)
+        }
+
         let defender = board.unit.at(move.to)
 
         board.unit.remove(move.from)
@@ -255,7 +263,8 @@ export class Rule
         return board
     }
 
-    static get_move_options(board: GameBoard, at: Coordinate): HashSet<Coordinate> {
+    static get_move_options(
+            board: GameBoard, at: Coordinate, enable_scout: boolean = true): HashSet<Coordinate> {
         let unit = board.unit.at(at)
         let options = new HashSet<Coordinate>()
         if (unit == null) return options
@@ -332,7 +341,7 @@ export class Rule
 
         if (rail_map.has(at)) {
             for (let next of rail_map.get(at)!) {
-                if (unit.type == Scout) {
+                if (enable_scout && unit.type == Scout) {
                     collect_as_long_as_rail(next)
                 } else {
                     collect_along_rail(at, next)

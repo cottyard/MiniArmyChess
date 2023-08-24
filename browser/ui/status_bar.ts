@@ -1,5 +1,5 @@
 //import { Player, Players } from "../../common/entity"
-import { Coordinate, Unit} from "../../common/entity"
+import { Coordinate, Unit, which_player} from "../../common/entity"
 import { GameStatus } from "../../common/game_round"
 import { IGameUiFacade } from "../game"
 import { IBoardDisplay } from "./board_display"
@@ -68,6 +68,7 @@ export class StatusBar implements IComponent
         if (this.cursor) {
             let unit = this.game.context.present.board.unit.at(this.cursor)
             if (unit == null) return
+            if (unit.owner == which_player(this.game.context.present.group_to_move)) return
             this.dom_element.appendChild(DomHelper.create_text(
                 observation_literal(unit),
                 {
