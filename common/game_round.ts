@@ -1,7 +1,7 @@
 import { Board, create_serializable_board_ctor } from "./board";
-import { Group, Move, Unit, UnitConstructor } from "./entity";
+import { Group, Move, Unit, UnitConstructor, all_unit_types } from "./entity";
 import { ISerializable, randint } from "./language";
-import { GameBoard, Rule, get_initial_coordinates, units_per_group } from "./rule";
+import { GameBoard, Rule, get_initial_coordinates } from "./rule";
 
 export class InsufficientSupply extends Error { }
 
@@ -76,19 +76,20 @@ export class GameRound implements ISerializable
 
     static set_out(board: Board<Unit>): void
     {
-        let l = [...units_per_group]
+        //let l = [...units_per_group]
         for (let group = 0; group < 4; ++group) {
-            for (let i = 0; i < l.length; ++i) {
-                let swap_with = randint(l.length)
-                if (i != swap_with) {
-                    let t = l[i]
-                    l[i] = l[swap_with]
-                    l[swap_with] = t
-                }
-            }
+            // for (let i = 0; i < l.length; ++i) {
+            //     let swap_with = randint(l.length)
+            //     if (i != swap_with) {
+            //         let t = l[i]
+            //         l[i] = l[swap_with]
+            //         l[swap_with] = t
+            //     }
+            // }
+            let layout_type_id = every_possible_layout[randint(every_possible_layout.length)]
             let coords = get_initial_coordinates(group as Group)
-            for (let i = 0; i < l.length; ++i) {
-                board.put(coords[i], new l[i](group as Group))
+            for (let i = 0; i < layout_type_id.length; ++i) {
+                board.put(coords[i], new all_unit_types[layout_type_id[i] - 1](group as Group))
             }
         }
     }
@@ -126,3 +127,38 @@ export class GameRound implements ISerializable
         return GameRound.new_game()
     }
 }
+
+const every_possible_layout: number[][] = (function () {
+    let all = [
+        [3,4,5,6,7],[3,4,5,6,7],[3,4,5,6,7],
+        [2,3,4,5,6,7],[2,3,4,5,6,7],
+        [2,3,4,5,6,7,8],[2,3,4,5,6,7,8],[2,3,4,5,6,7,8],
+        [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8]
+    ]
+    let piece_count = [-1, 1,1,1,1,3,1,1,2]
+    let picked: number[] = []
+    let layouts: number[][] = []
+    function solve(piece: number): number {
+        let choices = all[piece]
+        let solution_count = 0
+        for (let i = 0; i < choices.length; ++i) {
+            let piece_type = choices[i]
+            if (piece_count[piece_type] == 0) continue
+            if (piece == all.length - 1) {
+                ++solution_count
+                picked.push(piece_type)
+                layouts.push([...picked])
+                picked.pop()
+            } else {
+                --piece_count[piece_type]
+                picked.push(piece_type)
+                solution_count += solve(piece + 1)
+                picked.pop()
+                ++piece_count[piece_type]
+            }
+        }
+        return solution_count
+    }
+    solve(0)
+    return layouts
+})()

@@ -54,10 +54,10 @@ const connectivity_rail_quarter: Connectivity[] = [
 ]
 
 const starting_grids: Coordinate[] = [
-    [4,0], [5, 0], [6, 0],
-    [4,1], [5, 1], [6, 1],
+    [4,3], [5, 3], [6, 3],
     [4,2], [6, 2],
-    [4,3], [5, 3], [6, 3]
+    [4,1], [5, 1], [6, 1],
+    [4,0], [5, 0], [6, 0]
 ].map(([x, y]) => new Coordinate(x, y))
 
 export const camps: Coordinate[] = [
@@ -150,44 +150,6 @@ export const rail_joint = function () {
     j.put(new Coordinate(7, 6), new Coordinate(8, 6))
     return j
 }()
-
-// function auto_reconing() {
-//     let all = [
-//         [3,4,5,6,7],[3,4,5,6,7],[3,4,5,6,7],
-//         [2,3,4,5,6,7],[2,3,4,5,6,7],
-//         [2,3,4,5,6,7,8],[2,3,4,5,6,7,8],[2,3,4,5,6,7,8],
-//         [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8]
-//     ]
-//     let count = [2,3,3,3,3,2,2,2,2,1,1,1]
-    
-//     function solve(piece: number): number {
-//         let choices = all[piece]
-//         let solutions = 0
-//         for (let i = 0; i < choices.length; ++i) {
-//             let piece_type = choices[i]
-//             if (count[piece_type] == 0) continue
-//             if (piece == all.length - 1) {
-//                 ++solutions
-//                 //picked.push(piece_type)
-//                 //solution_records.push([...picked])
-//                 //picked.pop()
-//             } else {
-//                 --count[piece_type]
-//                 //picked.push(piece_type)
-//                 solutions += solve(piece + 1)
-//                 //picked.pop()
-//                 ++count[piece_type]
-//             }
-//         }
-//         return solutions
-//     }
-    
-//     console.log(solve(0))
-//     //console.log(solution_records.length)
-//     //for (let i = 0; i < 20; ++i)
-//         //console.log(solution_records[i])
-    
-// }
 
 function find_unit(board: GameBoard, group: Group, type: UnitConstructor): Unit | null {
     let found = null
