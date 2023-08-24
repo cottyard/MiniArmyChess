@@ -34,7 +34,7 @@ export function main()
     //     button_bar.update_counter(secs);
     // });
 
-    // event_box.emit("refresh ui", null);
+    event_box.emit("refresh ui", null)
 }
 
 window.onload = main;

@@ -189,6 +189,15 @@ export const rail_joint = function () {
     
 // }
 
+function find_unit(board: GameBoard, group: Group, type: UnitConstructor): Unit | null {
+    let found = null
+    board.unit.iterate_units((unit, _) => {
+        if (unit.group == group && unit.type.id == type.id) {
+            found = unit
+        }
+    })
+    return found
+}
 
 export class Rule
 {
@@ -196,6 +205,7 @@ export class Rule
         let alive = false
         board.unit.iterate_units((unit, coord) => {
             if (unit.group == group) {
+                // todo: fix - add choke logic
                 if (this.get_move_options(board, coord).size() > 0) {
                     alive = true
                 }
@@ -204,7 +214,7 @@ export class Rule
         return alive
     }
 
-    static update_observation_by_judgecall(attacker: Unit, defender: Unit, call: JudgeCall): void {
+    static update_observation_on_combat(board: GameBoard, attacker: Unit, defender: Unit, call: JudgeCall): void {
         let possible_attackers = []
         for (let attacker_type = 1; attacker_type <= all_unit_types.length; ++attacker_type) {
             if (judge_table[attacker_type - 1][defender.type.id - 1] == call) {
@@ -221,18 +231,30 @@ export class Rule
         }
         defender.lock_on(possible_defenders)
 
-        // if (attacker.type == Scout && call == JudgeCall.LOST) {
-        //     // todo: reveal defender
-        // }
+        if (attacker.type == Scout && call == JudgeCall.LOST) {
+            defender.reveal()
+        }
+        if (attacker.type == Airforce && call != JudgeCall.WON) {
+            this.reveal_base(board, attacker.group)
+        }
+        if (defender.type == Airforce && call != JudgeCall.LOST) {
+            this.reveal_base(board, defender.group)
+        }
     }
 
-    static proceed(board: GameBoard, move: Move): GameBoard {
-        let b = board.copy()
-        let attacker = b.unit.at(move.from)
-        if (attacker == null) throw new Error('null piece')
-        let defender = b.unit.at(move.to)
+    static reveal_base(board: GameBoard, group: Group): void {
+        let unit = find_unit(board, group, Base)
+        if (unit == null) throw Error("expect Base")
+        unit.reveal()
+    }
 
-        b.unit.remove(move.from)
+    static proceed(_board: GameBoard, move: Move): GameBoard {
+        let board = _board.copy()
+        let attacker = board.unit.at(move.from)
+        if (attacker == null) throw new Error('null piece')
+        let defender = board.unit.at(move.to)
+
+        board.unit.remove(move.from)
 
         let keep_attacker = false
         let keep_defender = false
@@ -251,24 +273,24 @@ export class Rule
                 keep_defender = true
             }
 
-            this.update_observation_by_judgecall(attacker, defender, call)
+            this.update_observation_on_combat(board, attacker, defender, call)
 
             if (defender.type == Base) {
                 let dg = defender.group
-                b.unit.iterate_units((unit, coord) => {
+                board.unit.iterate_units((unit, coord) => {
                     if (unit.group == dg) {
-                        b.unit.remove(coord)
+                        board.unit.remove(coord)
                     }
                 })
             }
         }
 
         if (keep_attacker) {
-            b.unit.put(move.to, attacker)
+            board.unit.put(move.to, attacker)
         } else if (!keep_defender) {
-            b.unit.remove(move.to)
+            board.unit.remove(move.to)
         }
-        return b
+        return board
     }
 
     static get_move_options(board: GameBoard, at: Coordinate): HashSet<Coordinate> {
@@ -336,14 +358,25 @@ export class Rule
             }
         }
 
-        options.put(at)
-        if (rail_map.has(at)) {
-            for (let next of rail_map.get(at)!) {
-                collect_along_rail(at, next)
+        function collect_as_long_as_rail(from: Coordinate) {
+            let status = collect(from)
+            if (status == "attack" || status == "occupied") return
+            let nexts = rail_map.get(from)!
+            for (let next of nexts) {
+                if (options.has(next)) continue
+                collect_as_long_as_rail(next)
             }
         }
-        options.remove(at)
 
+        if (rail_map.has(at)) {
+            for (let next of rail_map.get(at)!) {
+                if (unit.type == Scout) {
+                    collect_as_long_as_rail(next)
+                } else {
+                    collect_along_rail(at, next)
+                }
+            }
+        }
         return options
     }
 

@@ -158,11 +158,8 @@ export class BoardDisplay implements IBoardDisplay
             if (unit != null && unit.group == current_group) {
                 this.selected = c
             } else {
-                try {
-                    let m = new Move(this.selected, this.hovering)
-                    this.game.submit_move(m)
-                }
-                catch {}
+                let m = new Move(this.selected, this.hovering)
+                this.game.submit_move(m)
                 this.selected = null
             }
         }

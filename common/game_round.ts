@@ -26,6 +26,7 @@ export class GameRound implements ISerializable
 
     proceed(move: Move): GameRound
     {
+        if (!Rule.validate_move(this.board, this.group_to_move, move)) throw Error("invalid move")
         let next_board = Rule.proceed(this.board, move)
 
         let p1_alive = Rule.alive(next_board, 0) || Rule.alive(next_board, 2)

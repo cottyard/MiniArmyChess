@@ -33,19 +33,10 @@ export class LocalAgent extends ServerAgent
     
     submit_move(move: Move): void
     {
-        try
-        {
-            if (!this.context.present.validate_move(move)) return
-            let next = this.context.present.proceed(move)
-            this.context.new_round(next)
-            event_box.emit("refresh ui", null)
-        }
-        catch(e)
-        {
-            console.log("received invalid move")
-            console.log(e)
-            return
-        }
+        if (!this.context.present.validate_move(move)) return
+        let next = this.context.present.proceed(move)
+        this.context.new_round(next)
+        event_box.emit("refresh ui", null)
     }
 
     on_ai_move(_e: any): void
