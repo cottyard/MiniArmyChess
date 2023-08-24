@@ -150,6 +150,31 @@ export class GameCanvas
         }
     }
 
+    paint_move_indicator(coordinate: Coordinate, width: number = 3, size = 10)
+    {
+        let center = GameCanvas.get_grid_center(coordinate)
+        let p: number, q: number
+        let half_grid = g.settings.grid_size / 2 - 10
+        let style = g.styles.STYLE_RED
+        for ([p, q] of [[-1, -1], [-1, 1], [1, -1], [1, 1]])
+        {
+            using(new Renderer(this.st_ctx), (renderer) =>
+            {
+                renderer.set_alpha(0.8);
+                renderer.set_color(style);
+                renderer.translate(center);
+                renderer.translate(new Position(p * half_grid, q * half_grid));
+                let zero = new Position(-p * (width / 2 + 1), -q * (width / 2 + 1));
+                renderer.line(
+                    zero.add(new PositionDelta(p * width / 2, 0)),
+                    zero.add(new PositionDelta(-p * size, 0)), width);
+                renderer.line(
+                    zero,
+                    zero.add(new PositionDelta(0, -q * size)), width);
+            });
+        }
+    }
+
     paint_group_indicator(position: Position)
     {
         let size = 7

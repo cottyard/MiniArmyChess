@@ -72,7 +72,6 @@ export class StatusBar implements IComponent
                 observation_literal(unit),
                 {
                     'text-align': 'right',
-                    fontWeight: "bold",
                     flexGrow: 1,
                 }))
         }

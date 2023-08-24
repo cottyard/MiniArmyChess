@@ -186,6 +186,12 @@ export class BoardDisplay implements IBoardDisplay
             gi = rotate_counter_clockwise(gi)
         }
         this.canvas.paint_group_indicator(gi)
+
+        let move = this.game.context.present.last_move
+        if (move) {
+            this.canvas.paint_move_indicator(move.from)
+            this.canvas.paint_move_indicator(move.to)
+        }
     }
 
     render_indicators(): void{
