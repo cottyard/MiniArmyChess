@@ -1,5 +1,5 @@
 import { Board, SerializableBoard } from "./board";
-import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Tank, Unit, UnitConstructor, all_unit_types} from "./entity";
+import { Tank, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Armored, Unit, UnitConstructor, all_unit_types} from "./entity";
 import { g } from "./global";
 import { HashMap, HashSet } from "./language";
 
@@ -18,8 +18,8 @@ const judge_table: number[][] = [
     [1, 0, 1, 1, 1, 1, 1, 2], // 3 Artillery
     [1, 0, 1, 0, 2, 2, 2, 2], // 4 Scout
     [1, 0, 1, 1, 0, 2, 2, 1], // 5 Infantry
-    [1, 0, 1, 1, 1, 0, 2, 2], // 6 Tank
-    [1, 0, 1, 1, 1, 1, 0, 2], // 7 Airforce
+    [1, 0, 1, 1, 1, 0, 2, 2], // 6 Armored
+    [1, 0, 1, 1, 1, 1, 0, 2], // 7 Tank
     [3, 3, 3, 3, 3, 3, 3, 3]  // 8 Mine
 ]
 
@@ -36,7 +36,7 @@ class Connection {
 type Connectivity = [Coord, Coord]
 
 export const units_per_group: UnitConstructor[] = [
-    Scout, Artillery, Bomb, Infantry, Infantry, Infantry, Tank, Airforce, Base, Mine, Mine
+    Scout, Artillery, Bomb, Infantry, Infantry, Infantry, Armored, Tank, Base, Mine, Mine
 ]
 
 const connectivity_road_quarter: Connectivity[] = [
@@ -234,10 +234,10 @@ export class Rule
         if (attacker.type == Scout && call == JudgeCall.LOST) {
             defender.reveal()
         }
-        if (attacker.type == Airforce && call != JudgeCall.WON) {
+        if (attacker.type == Tank && call != JudgeCall.WON) {
             this.reveal_base(board, attacker.group)
         }
-        if (defender.type == Airforce && call != JudgeCall.LOST) {
+        if (defender.type == Tank && call != JudgeCall.LOST) {
             this.reveal_base(board, defender.group)
         }
     }

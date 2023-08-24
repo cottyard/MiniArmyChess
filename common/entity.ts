@@ -273,10 +273,10 @@ export class Scout extends UnitConstructor{
 export class Infantry extends UnitConstructor{
     static readonly id = 5
 }
-export class Tank extends UnitConstructor{
+export class Armored extends UnitConstructor{
     static readonly id = 6
 }
-export class Airforce extends UnitConstructor{
+export class Tank extends UnitConstructor{
     static readonly id = 7
 }
 export class Mine extends UnitConstructor{
@@ -284,7 +284,7 @@ export class Mine extends UnitConstructor{
 }
 
 export const all_unit_types: UnitConstructor[] = [
-    Base, Bomb, Artillery, Scout, Infantry, Tank, Airforce, Mine
+    Base, Bomb, Artillery, Scout, Infantry, Armored, Tank, Mine
 ]
 
 const unit_type_by_name = new Map<string, UnitConstructor>()

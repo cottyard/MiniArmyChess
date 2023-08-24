@@ -1,4 +1,4 @@
-import { Unit, UnitConstructor, Scout, Artillery, Infantry, Tank, Airforce, Mine, Base, Bomb } from "../../common/entity";
+import { Unit, UnitConstructor, Scout, Artillery, Infantry, Armored, Tank, Mine, Base, Bomb } from "../../common/entity";
 import { g } from "../../common/global";
 import { Position } from "./canvas";
 import { Renderer } from "./renderer";
@@ -12,8 +12,8 @@ export let CanvasUnitFactory = function (unit: Unit, mode: PaintMode): CanvasUni
         [Artillery, CanvasArtillery],
         [Bomb, CanvasBomb],
         [Infantry, CanvasInfantry],
+        [Armored, CanvasArmored],
         [Tank, CanvasTank],
-        [Airforce, CanvasAirforce],
         [Base, CanvasBase],
         [Mine, CanvasMine],
     ])
@@ -64,7 +64,7 @@ export abstract class CanvasUnit
 }
 
 export function type_to_literal(type_id: number) {
-    return ["营", "炸", "炮", "侦", "兵", "坦", "飞", "雷"][type_id - 1]
+    return ["营", "炸", "炮", "侦", "兵", "车", "坦", "雷"][type_id - 1]
 }
 
 class CanvasScout extends CanvasUnit{
@@ -79,10 +79,10 @@ class CanvasBomb extends CanvasUnit{
 class CanvasInfantry extends CanvasUnit{
 }
 
-class CanvasTank extends CanvasUnit{
+class CanvasArmored extends CanvasUnit{
 }
 
-class CanvasAirforce extends CanvasUnit{
+class CanvasTank extends CanvasUnit{
 }
 
 class CanvasBase extends CanvasUnit{
