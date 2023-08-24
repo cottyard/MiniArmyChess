@@ -121,17 +121,16 @@ export class GameCanvas
         })
     }
 
-    paint_grid_indicator(coordinate: Coordinate, style: string | null = null, width: number = 3)
+    paint_grid_indicator(coordinate: Coordinate, style: string | null = null, width: number = 3, size = 15)
     {
-        let center = GameCanvas.get_grid_center(coordinate);
-        let size = 15;
-        let p: number, q: number;
-        let half_grid = g.settings.grid_size / 2;
+        let center = GameCanvas.get_grid_center(coordinate)
+        let p: number, q: number
+        let half_grid = g.settings.grid_size / 2 - 15 + size
         if (!style)
         {
-            style = g.const.STYLE_BLACK;
+            style = g.const.STYLE_BLACK
         }
-        let style_ = style;
+        let style_ = style
         for ([p, q] of [[-1, -1], [-1, 1], [1, -1], [1, 1]])
         {
             using(new Renderer(this.am_ctx), (renderer) =>

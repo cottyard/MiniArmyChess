@@ -114,9 +114,7 @@ export class BoardDisplay implements IBoardDisplay
         if (!this.hovering?.equals(coord)){
             this.hovering = coord
             this.render_indicators()
-            event_box.emit(
-                "refresh status", 
-                this.game.context.present.board.unit.at(coord))
+            event_box.emit("refresh status", coord)
         }
     }
 
@@ -168,7 +166,7 @@ export class BoardDisplay implements IBoardDisplay
                 this.selected = null
             }
         }
-        this.render()
+        this.render_indicators()
     }
 
     update_display(){
@@ -196,7 +194,7 @@ export class BoardDisplay implements IBoardDisplay
         if (this.selected){
             this.canvas.paint_grid_indicator(this.selected, g.const.STYLE_BLACK, 4)
             for (let c of Rule.get_move_options(this.game.context.present.board, this.selected).as_list()) {
-                this.canvas.paint_grid_indicator(c, g.const.STYLE_GREEN, 1.5)
+                this.canvas.paint_grid_indicator(c, g.const.STYLE_GREEN, 2, 10)
             }
         }
     }

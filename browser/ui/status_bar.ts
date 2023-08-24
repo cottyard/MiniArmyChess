@@ -1,5 +1,5 @@
 //import { Player, Players } from "../../common/entity"
-import { Unit, all_unit_types } from "../../common/entity"
+import { Coordinate, Unit, all_unit_types } from "../../common/entity"
 import { GameStatus } from "../../common/game_round"
 import { IGameUiFacade } from "../game"
 import { IBoardDisplay } from "./board_display"
@@ -7,17 +7,18 @@ import { type_to_literal } from "./canvas_entity"
 import { IComponent, DomHelper } from "./dom_helper"
 
 function observation_literal(unit: Unit): string {
-    let l = []
+    let l = [type_to_literal(unit.type), ":"]
     for (let t of all_unit_types) {
-        if (unit.skeptical(t)) {
+        if (unit.skeptical(t.id)) {
             l.push(type_to_literal(t))
         }
     }
-    return l.join(',')
+    return l.join(' ')
 }
 
 export class StatusBar implements IComponent
 {
+    cursor: Coordinate | undefined = undefined
     constructor(
         public dom_element: HTMLDivElement,
         public board_display: IBoardDisplay,
@@ -29,8 +30,9 @@ export class StatusBar implements IComponent
         // }, 1000)
     }
 
-    render(unit: Unit | undefined = undefined)
+    render(cursor: Coordinate | undefined = undefined)
     {
+        if (cursor) this.cursor = cursor
         this.dom_element.innerHTML = ""
 
         DomHelper.apply_style(this.dom_element, {
@@ -68,7 +70,9 @@ export class StatusBar implements IComponent
                 }))
         }
 
-        if (unit) {
+        if (this.cursor) {
+            let unit = this.game.context.present.board.unit.at(this.cursor)
+            if (unit == null) return
             this.dom_element.appendChild(DomHelper.create_text(
                 observation_literal(unit),
                 {

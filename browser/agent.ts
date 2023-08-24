@@ -19,8 +19,6 @@ abstract class ServerAgent implements IServerAgent
 
 export class LocalAgent extends ServerAgent
 {
-    // private ai_worker: Worker | null = null;
-
     constructor(context: IGameContext)
     {
         super(context);
@@ -32,30 +30,15 @@ export class LocalAgent extends ServerAgent
 
         this.new_game();
     }
-
-    // trigger_ai_move()
-    // {
-    //     this.ai_worker = new Worker("kingkong_worker.js");
-    //     this.ai_worker.onmessage = this.on_ai_move.bind(this);
-    //     this.ai_worker.postMessage([
-    //         this.context.present.serialize(),
-    //         serialize_player(Player.P2)]);
-    // }
     
     submit_move(move: Move): void
     {
-        // this.context.consumed_msec[Player.P1] += Date.now() - this.context.round_begin_time;
-        // this.context.status = GameContextStatus.WaitForOpponent;
-        // event_box.emit("refresh ui", null);
-
-        //this.ai_worker?.postMessage(null); // Null message to stop thinking.
-        //this.ai_worker?.terminate();
-
         try
         {
             if (!this.context.present.validate_move(move)) return
             let next = this.context.present.proceed(move)
             this.context.new_round(next)
+            event_box.emit("refresh ui", null)
         }
         catch(e)
         {
@@ -63,31 +46,10 @@ export class LocalAgent extends ServerAgent
             console.log(e)
             return
         }
-
-        // this.context.clear_staged_moves();
-
-        // event_box.emit("show last round", null);
-        // event_box.emit("refresh ui", null);
-
-        // this.reset_moves();
-
-        // if (this.context.status == GameContextStatus.WaitForPlayer)
-        // {
-        //     this.trigger_ai_move();
-        // }
     }
 
-    on_ai_move(e: any): void
+    on_ai_move(_e: any): void
     {
-        e
-        // const [round_str, ai_move_str, time_consumed] = e.data;
-        // if (round_str != this.context.present.serialize()) {
-        //     return;
-        // }
-        // this.ai_move = PlayerMove.deserialize(ai_move_str);
-        // this.context.players_moved[Player.P2] = true;
-        // this.context.consumed_msec[Player.P2] += time_consumed;
-        // this.try_proceed();
     }
 
     new_game(): void 

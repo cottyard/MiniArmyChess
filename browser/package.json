@@ -9,9 +9,9 @@
     "watch": "^1.0.2"
   },
   "scripts": {
-    "watch": "watch 'npm run build' ../common ../browser",
-    "build": "browserify main.ts -p [ tsify --noImplicitAny] | uglifyjs -c -o ../target/lancer.js",
-    "build-dev": "browserify main.ts -d -p [ tsify --noImplicitAny] > ../target/lancer.js"
+    "watch": "watch 'npm run build-dev' ../common ../browser",
+    "build": "browserify main.ts -p [ tsify --noImplicitAny] | uglifyjs -c -o ../target/machess.js",
+    "build-dev": "browserify main.ts -d -p [ tsify --noImplicitAny] > ../target/machess.js"
   },
   "devDependencies": {
     "@capacitor/cli": "^3.6.0"

@@ -183,14 +183,28 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
         else return Player.P2
     }
 
-    skeptical(type: UnitConstructor): boolean {
-        return ((1 << (type.id - 1)) & this.observation) != 0
+    skeptical(type_id: number): boolean {
+        return ((1 << (type_id - 1)) & this.observation) != 0
     }
 
-    rule_out(type: UnitConstructor): void {
-        if (this.skeptical(type)) {
-            this.observation ^= (1 << (type.id - 1))
+    lock_on(type_ids: number[]): void {
+        for (let id = 1; id <= all_unit_types.length; ++id) {
+            if (type_ids.find((i => i == id)) == undefined) {
+                this.rule_out(id)
+            }
         }
+    }
+
+    rule_out(type_id: number): void {
+        if (this.skeptical(type_id)) {
+            this.observation ^= (1 << (type_id - 1))
+        }
+    }
+
+    reveal(): void {
+        this.revealed = true
+        this.observation = 0
+        this.observation |= (1 << this.type.id - 1)
     }
 
     serialize(): string{
@@ -200,6 +214,8 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
     copy(): Unit{
         let ctor = <UnitConstructor> this.constructor
         let u = new ctor(this.group)
+        u.observation = this.observation
+        u.revealed = this.revealed
         return u
     }
 
@@ -260,7 +276,7 @@ export class Mine extends UnitConstructor{
 }
 
 export const all_unit_types: UnitConstructor[] = [
-    Scout, Artillery, Bomb, Infantry, Tank, Airforce, Base, Mine
+    Base, Bomb, Artillery, Scout, Infantry, Tank, Airforce, Mine
 ]
 
 const unit_type_by_name = new Map<string, UnitConstructor>()

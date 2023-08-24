@@ -1,23 +1,31 @@
 import { Board, SerializableBoard } from "./board";
-import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Tank, Unit, UnitConstructor} from "./entity";
+import { Airforce, Artillery, Base, Bomb, Coord, Coordinate, Group, Infantry, Mine, Move, Player, Scout, Tank, Unit, UnitConstructor, all_unit_types} from "./entity";
 import { g } from "./global";
 import { HashMap, HashSet } from "./language";
 
 /* judge table decies what happens when a piece duels another */
-// const DUEL_TIED = 0
-const DUEL_WON = 1
-const DUEL_LOST = 2
-const DUEL_IMPOSSIBLE = 3
+
+enum JudgeCall {
+    TIED = 0,
+    WON = 1,
+    LOST = 2,
+    INVALID = 3
+}
+
 const judge_table: number[][] = [
     [3, 3, 3, 3, 3, 3, 3, 3], // 1 Base
     [0, 0, 0, 0, 0, 0, 0, 0], // 2 Bomb
     [1, 0, 1, 1, 1, 1, 1, 2], // 3 Artillery
     [1, 0, 1, 0, 2, 2, 2, 2], // 4 Scout
-    [1, 0, 1, 1, 2, 2, 2, 1], // 5 Infantry
+    [1, 0, 1, 1, 0, 2, 2, 1], // 5 Infantry
     [1, 0, 1, 1, 1, 0, 2, 2], // 6 Tank
     [1, 0, 1, 1, 1, 1, 0, 2], // 7 Airforce
     [3, 3, 3, 3, 3, 3, 3, 3]  // 8 Mine
 ]
+
+function judge(attacker: Unit, defender: Unit): JudgeCall {
+    return judge_table[attacker.type.id - 1][defender.type.id - 1]
+}
 
 //class InvalidMove extends Error { }
 class Connection {
@@ -196,11 +204,33 @@ export class Rule
         return alive
     }
 
+    static update_observation_by_judgecall(attacker: Unit, defender: Unit, call: JudgeCall): void {
+        let possible_attackers = []
+        for (let attacker_type = 1; attacker_type <= all_unit_types.length; ++attacker_type) {
+            if (judge_table[attacker_type - 1][defender.type.id - 1] == call) {
+                possible_attackers.push(attacker_type)
+            }
+        }
+        attacker.lock_on(possible_attackers)
+
+        let possible_defenders = []
+        for (let defender_type = 1; defender_type <= all_unit_types.length; ++defender_type) {
+            if (judge_table[attacker.type.id - 1][defender_type - 1] == call) {
+                possible_defenders.push(defender_type)
+            }
+        }
+        defender.lock_on(possible_defenders)
+
+        // if (attacker.type == Scout && call == JudgeCall.LOST) {
+        //     // todo: reveal defender
+        // }
+    }
+
     static proceed(board: GameBoard, move: Move): GameBoard {
         let b = board.copy()
         let attacker = b.unit.at(move.from)
         if (attacker == null) throw new Error('null piece')
-        let defender = board.unit.at(move.to)
+        let defender = b.unit.at(move.to)
 
         b.unit.remove(move.from)
 
@@ -211,18 +241,17 @@ export class Rule
             keep_attacker = true
         }
         else {
-            let result = judge_table[attacker.type.id - 1][defender.type.id - 1]
-            if (result >= DUEL_IMPOSSIBLE) {
+            let call = judge(attacker, defender)
+            if (call >= JudgeCall.INVALID) {
                 throw Error('impossible duel')
             }
-            if (result == DUEL_WON) {
+            if (call == JudgeCall.WON) {
                 keep_attacker = true
-            } else if (result == DUEL_LOST) {
+            } else if (call == JudgeCall.LOST) {
                 keep_defender = true
-                if (attacker.type == Scout) {
-                    // todo: reveal defender
-                }
             }
+
+            this.update_observation_by_judgecall(attacker, defender, call)
 
             if (defender.type == Base) {
                 let dg = defender.group

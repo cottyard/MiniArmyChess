@@ -20,15 +20,14 @@ export function main()
     ui_components.push(status_bar)
     // ui_components.push(button_bar);
 
-    // event_box.subscribe('refresh ui', _ => {
-    //     for (let c of ui_components)
-    //     {
-    //         c.render()
-    //     }
-    // })
+    event_box.subscribe('refresh ui', _ => {
+        for (let c of ui_components) {
+            c.render()
+        }
+    })
 
-    event_box.subscribe('refresh status', unit => {
-        status_bar.render(unit)
+    event_box.subscribe('refresh status', arg => {
+        status_bar.render(arg)
     })
 
     // event_box.subscribe("refresh counter", secs => {
