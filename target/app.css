@@ -15,19 +15,24 @@ span {
     align-items: center;
     justify-content: space-around;
 }
-
 #inner-container {
     display: flex;
     flex-direction: row;
     align-items: center;
 }
-
-#action-panel {
-    margin-left: 20px;
-    width: 320px;
+#hall-panel {
+    width: 240px;
+    height: 720px;
     align-self: flex-start;
+    border-style: dashed;
+    border-width: 1px;
+    margin-top: 65px;
 }
-
+#place-holder {
+    width: 240px;
+    height: 720px;
+    align-self: flex-end;
+}
 #animate-transparent {
     opacity: 0.3;
 }

@@ -1,5 +1,6 @@
 import { GameUiFacade } from "./game";
 import { BoardDisplay } from "./ui/board_display";
+import { HallPanel } from "./ui/hall_panel";
 // import { ButtonBar } from "./ui/button_bar";
 import { StatusBar } from "./ui/status_bar"
 import { event_box, ui_components } from "./ui/ui";
@@ -16,8 +17,12 @@ export function main()
     // let button_bar = new ButtonBar(
     //     <HTMLDivElement> document.getElementById('button-bar'), board_display, facade);
 
+    let hall_panel = new HallPanel(
+        <HTMLDivElement> document.getElementById('hall-panel'))
+
     ui_components.push(board_display)
     ui_components.push(status_bar)
+    ui_components.push(hall_panel)
     // ui_components.push(button_bar);
 
     event_box.subscribe('refresh ui', _ => {
