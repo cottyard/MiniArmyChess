@@ -12,21 +12,20 @@ span {
     flex-direction: row;
     width: 100vw;
     min-height: 100vh;
-    align-items: center;
     justify-content: space-around;
 }
 #inner-container {
     display: flex;
     flex-direction: row;
-    align-items: center;
 }
 #hall-panel {
+    margin-right: 20px;
     width: 240px;
     height: 720px;
     align-self: flex-start;
     border-style: dashed;
     border-width: 1px;
-    margin-top: 65px;
+    margin-top: 40px;
 }
 #place-holder {
     width: 240px;

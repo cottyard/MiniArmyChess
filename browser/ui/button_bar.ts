@@ -1,5 +1,5 @@
-import { IGameUiFacade, GameContextStatus } from "../game";
-import { IBoardDisplay } from './board_display'
+import { GameUiFacade, GameContextStatus } from "../game_context";
+import { BoardDisplay } from './board_display'
 import { DomHelper, IComponent } from "./dom_helper";
 
 interface IButtonBar extends IComponent
@@ -16,8 +16,8 @@ export class ButtonBar implements IButtonBar
 
     constructor(
         public dom_element: HTMLDivElement,
-        public board_display: IBoardDisplay,
-        public game: IGameUiFacade)
+        public board_display: BoardDisplay,
+        public game: GameUiFacade)
     {
     }
 
@@ -79,11 +79,11 @@ export class ButtonBar implements IButtonBar
         if (this.game.context.is_in_menu() || this.game.context.is_finished())
         {
             let vs_AI = DomHelper.create_button();
-            vs_AI.onclick = () => { this.game.AI_mode(); };
+            // vs_AI.onclick = () => { this.game.AI_mode(); };
             vs_AI.innerText = "Play AI";
 
             let vs_Human = DomHelper.create_button();
-            vs_Human.onclick = () => { this.game.online_mode(); };
+            // vs_Human.onclick = () => { this.game.online_mode(); };
             vs_Human.innerText = "Play Online";
 
             this.dom_element.appendChild(vs_AI);
@@ -92,7 +92,7 @@ export class ButtonBar implements IButtonBar
         else if (this.game.context.is_in_queue() || this.game.context.is_not_started())
         {
             let new_game = DomHelper.create_button();
-            new_game.onclick = () => { this.game.new_game(); };
+            // new_game.onclick = () => { this.game.new_game(); };
 
             if (this.game.context.is_in_queue())
             {

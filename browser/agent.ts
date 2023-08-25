@@ -1,57 +1,73 @@
-import { Move, Player} from "../common/entity";
-import { GameContextStatus, IGameContext } from "./game";
+import { Move} from "../common/entity";
+import { GameContextStatus, GameContext } from "./game_context";
 import { event_box } from "./ui/ui";
 
 export interface IServerAgent
 {
     submit_move(move: Move): void
-    new_game(name: string): void
+    //new_game(name: string): void
     destroy(): void
 }
 
-abstract class ServerAgent implements IServerAgent
+abstract class GameAgent implements IServerAgent
 {
-    constructor(protected context: IGameContext) {}
+    constructor(protected context: GameContext) {}
     abstract submit_move(move: Move): void
-    abstract new_game(_: string): void
+    //abstract new_game(_: string): void
     destroy(): void {}
 }
 
-export class LocalAgent extends ServerAgent
+export class LayoutAgent extends GameAgent
 {
-    constructor(context: IGameContext)
+    constructor(context: GameContext)
     {
-        super(context);
-        this.context.player = Player.P1;
-        this.context.players_name = {
-            [Player.P1]: "You",
-            [Player.P2]: "King Kong"
-        }
-
-        this.new_game();
+        super(context)
+        this.context.prepare_layout()
+        this.context.status = GameContextStatus.WaitForPlayer
+        event_box.emit("refresh ui", null)
     }
     
     submit_move(move: Move): void
     {
-        if (!this.context.present.validate_move(move)) return
-        let next = this.context.present.proceed(move)
-        this.context.new_round(next)
+        this.context.present.modify_layout(move)
         event_box.emit("refresh ui", null)
     }
-
-    on_ai_move(_e: any): void
-    {
-    }
-
-    new_game(): void 
-    {
-        this.context.new_game()
-        this.context.status = GameContextStatus.WaitForPlayer
-        
-        event_box.emit("show present round", null);
-        event_box.emit("refresh ui", null);
-    }
 }
+
+
+// export class AiAgent extends GameAgent
+// {
+//     constructor(context: GameContext)
+//     {
+//         super(context);
+//         this.context.player = Player.P1;
+//         this.context.players_name = {
+//             [Player.P1]: "You",
+//             [Player.P2]: "King Kong"
+//         }
+
+//         this.new_game();
+//     }
+    
+//     submit_move(move: Move): void
+//     {
+//         if (!this.context.present.validate_move(move)) return
+//         let next = this.context.present.proceed(move)
+//         this.context.new_round(next)
+//         event_box.emit("refresh ui", null)
+//     }
+
+//     on_ai_move(_e: any): void
+//     {
+//     }
+
+//     new_game(): void 
+//     {
+//         this.context.new_game()
+//         this.context.status = GameContextStatus.WaitForPlayer
+//         event_box.emit("refresh ui", null);
+//     }
+// }
 
 // export class OnlineAgent extends ServerAgent
 // {

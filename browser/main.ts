@@ -1,4 +1,4 @@
-import { GameUiFacade } from "./game";
+import { GameUiFacade } from "./game_context";
 import { BoardDisplay } from "./ui/board_display";
 import { HallPanel } from "./ui/hall_panel";
 // import { ButtonBar } from "./ui/button_bar";
@@ -8,7 +8,7 @@ import { event_box, ui_components } from "./ui/ui";
 export function main()
 {
     let facade = new GameUiFacade()
-    facade.AI_mode()
+    facade.layout_mode()
     let board_display = new BoardDisplay(facade)
 
     let status_bar = new StatusBar(

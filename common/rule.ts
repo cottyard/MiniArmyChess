@@ -35,6 +35,7 @@ class Connection {
 
 type Connectivity = [Coord, Coord]
 
+export const unit_count_per_group = 11
 export const unit_count_by_type = [1,1,1,1,3,1,1,2]
 
 const connectivity_road_quarter: Connectivity[] = [
@@ -419,17 +420,17 @@ export class GameBoard{
     }
     auto_reason(group: Group) {
         let units = this.get_group(group)
-        if (units.length != starting_coordinates.length) {
+        if (units.length != unit_count_per_group) {
             if (units.length == 0) return
             else throw Error('wrong unit number')
         }
         let units_choices: number[][] = units.map((u)=>u.possible_types())
-        let solved_choices: boolean[][] = units.map(()=>new Array(unit_count_by_type.length).fill(false))
-        let assumption: number[] = new Array(units_choices.length).fill(0)
+        let solved_choices: boolean[][] = units.map(()=>new Array(unit_count_per_group).fill(false))
+        let assumption: number[] = new Array(unit_count_per_group).fill(0)
         
         function units_of_type(type_id: number): number[] {
             let unit_indexes: number[] = []
-            for (let i = 0; i < units_choices.length; ++i) {
+            for (let i = 0; i < unit_count_per_group; ++i) {
                 for (let choice of units_choices[i]) {
                     if (choice == type_id) {
                         unit_indexes.push(i)
@@ -441,7 +442,7 @@ export class GameBoard{
         }
 
         function record_solution() {
-            for (let i = 0; i < assumption.length; ++i) {
+            for (let i = 0; i < unit_count_per_group; ++i) {
                 if (assumption[i] == undefined) throw Error("expect type id")
                 solved_choices[i][assumption[i] - 1] = true
             }
@@ -459,7 +460,7 @@ export class GameBoard{
                     if (remaining > 1) {
                         solutions += assume_and_solve(candidate_index + 1, remaining - 1)
                     } else {
-                        if (type_id == unit_count_by_type.length) {
+                        if (type_id == all_unit_types.length) {
                             ++solutions
                             record_solution()
                         } else {

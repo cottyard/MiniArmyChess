@@ -80,11 +80,14 @@ export function which_player(group: Group): Player {
     else return Player.P2
 }
 export type Players<T> =
-    {
-        [Player.P1]: T,
-        [Player.P2]: T,
-    }
-
+{
+    [Player.P1]: T,
+    [Player.P2]: T,
+}
+export const which_groups: Players<[Group, Group]> = {
+    [Player.P1]: [0, 2],
+    [Player.P2]: [1, 3]
+}
 export module Players
 {  
     export function* both()

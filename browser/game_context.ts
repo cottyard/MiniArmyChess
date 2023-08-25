@@ -1,6 +1,6 @@
-import { IServerAgent, LocalAgent } from "./agent";
-import { Move, Player, Players } from "../common/entity";
-import { GameRound, GameStatus } from "../common/game_round";
+import { IServerAgent, LayoutAgent } from "./agent"
+import { Move, Player, Players } from "../common/entity"
+import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game_round"
 
 export enum GameContextStatus
 {
@@ -16,54 +16,34 @@ export enum GameContextStatus
     Tied
 }
 
-export interface IGameContext
+export class GameContext
 {
-    player: Player
-    last: GameRound | null
-    present: GameRound
-    status: GameContextStatus
-    consumed_msec: Players<number>
-    players_name: Players<string>
-    round_begin_time: number
-    new_game(): void
-    new_round(round: GameRound): void
-    is_in_menu(): boolean
-    is_playing(): boolean
-    is_waiting(): boolean
-    is_in_queue(): boolean
-    is_finished(): boolean
-    is_not_started(): boolean
-    is_first_round(): boolean
-}
-
-export class GameContext implements IGameContext
-{
-    private rounds: GameRound[] = [ GameRound.new_game() ];
+    private rounds: GameRound[] = []
     
     players_name: Players<string> = {
         [Player.P1]: 'player 1',
         [Player.P2]: 'player 2'
-    };
+    }
 
-    status: GameContextStatus = GameContextStatus.InMenu;
-    consumed_msec: Players<number> = Players.create(() => 0);
-    round_begin_time: number = Date.now();
+    status: GameContextStatus = GameContextStatus.InMenu
+    consumed_msec: Players<number> = Players.create(() => 0)
+    round_begin_time: number = Date.now()
 
-    private _player: Player;
+    private _player: Player
 
     constructor()
     {
-        this._player = Player.P1;
+        this._player = Player.P1
     }
 
     get player()
     {
-        return this._player;
+        return this._player
     }
 
     set player(value: Player)
     {
-        this._player = value;
+        this._player = value
     }
 
     new_round(round: GameRound): void 
@@ -95,28 +75,32 @@ export class GameContext implements IGameContext
         }
     }
 
-    new_game(): void {
-        this.rounds = [ GameRound.new_game() ]
+    new_game(p1: PlayerLayout, p2: PlayerLayout): void {
+        this.rounds = [ GameRound.new_game_by_layout(p1, p2) ]
         this.consumed_msec = Players.create(() => 0)
+    }
+
+    prepare_layout(): void {
+        this.rounds = [ GameRound.new_game_by_layout(new PlayerLayout(Player.P1, [new GroupLayout(), new GroupLayout()])) ]
     }
 
     get last(): GameRound | null
     {
         if (this.rounds.length >= 2)
         {
-            return this.rounds[this.rounds.length - 2];
+            return this.rounds[this.rounds.length - 2]
         }
-        return null;
+        return null
     }
 
     get present(): GameRound
     {
-        return this.rounds[this.rounds.length - 1];
+        return this.rounds[this.rounds.length - 1]
     }
 
     is_in_menu(): boolean 
     {
-        return this.status == GameContextStatus.InMenu;
+        return this.status == GameContextStatus.InMenu
     }
 
     is_playing(): boolean
@@ -126,7 +110,7 @@ export class GameContext implements IGameContext
             GameContextStatus.Submitting,
             GameContextStatus.WaitForPlayer,
             GameContextStatus.Loading,
-        ].indexOf(this.status) > -1;
+        ].indexOf(this.status) > -1
     }
 
     is_waiting(): boolean
@@ -134,12 +118,12 @@ export class GameContext implements IGameContext
         return [
             GameContextStatus.WaitForOpponent,
             GameContextStatus.WaitForPlayer
-        ].indexOf(this.status) > -1;
+        ].indexOf(this.status) > -1
     }
 
     is_in_queue(): boolean
     {
-        return this.status == GameContextStatus.InQueue;
+        return this.status == GameContextStatus.InQueue
     }
 
     is_finished(): boolean
@@ -148,35 +132,25 @@ export class GameContext implements IGameContext
             GameContextStatus.Victorious,
             GameContextStatus.Defeated,
             GameContextStatus.Tied
-        ].indexOf(this.status) > -1;
+        ].indexOf(this.status) > -1
     }
 
     is_not_started(): boolean
     {
-        return this.status == GameContextStatus.NotStarted;
+        return this.status == GameContextStatus.NotStarted
     }
 
     is_first_round(): boolean
     {
-        return this.last == null;
+        return this.last == null
     }
 }
 
-export interface IGameUiFacade
+export class GameUiFacade
 {
-    context: IGameContext;
-    player_name: string;
-    submit_move(move: Move): void;
-    new_game(): void;
-    online_mode(): void;
-    AI_mode(): void;
-}
-
-export class GameUiFacade implements IGameUiFacade
-{
-    player_name: string = "Anonymous";
-    context: IGameContext = new GameContext();
-    agent: IServerAgent | null = null;
+    player_name: string = "Anonymous"
+    context: GameContext = new GameContext()
+    agent: IServerAgent | null = null
 
     constructor()
     {
@@ -186,37 +160,42 @@ export class GameUiFacade implements IGameUiFacade
     {
         if (this.agent)
         {
-            this.agent.destroy();
+            this.agent.destroy()
         }
     }
 
-    online_mode()
-    {
-        this.destroy_agent();
-        this.context = new GameContext();
-        //this.agent = new OnlineAgent(this.context);
-    }
+    // online_mode()
+    // {
+    //     this.destroy_agent()
+    //     this.context = new GameContext()
+    //     //this.agent = new OnlineAgent(this.context)
+    // }
 
-    AI_mode()
-    {
-        this.destroy_agent();
-        this.context = new GameContext();
-        this.agent = new LocalAgent(this.context);
+    layout_mode() {
+        this.destroy_agent()
+        this.context = new GameContext()
+        this.agent = new LayoutAgent(this.context)
     }
+    // AI_mode()
+    // {
+    //     this.destroy_agent()
+    //     this.context = new GameContext()
+    //     this.agent = new AiAgent(this.context)
+    // }
 
     submit_move(move: Move): void 
     {
         if (this.agent)
         {
-            this.agent.submit_move(move);
+            this.agent.submit_move(move)
         }
     }
 
-    new_game(): void
-    {
-        if (this.agent)
-        {
-            this.agent.new_game(this.player_name);
-        }
-    }
+    // new_game(): void
+    // {
+    //     if (this.agent)
+    //     {
+    //         this.agent.new_game(this.player_name)
+    //     }
+    // }
 }

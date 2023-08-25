@@ -1,7 +1,7 @@
-import { Board, create_serializable_board_ctor } from "./board";
-import { Group, Move, Unit, UnitConstructor, all_unit_types } from "./entity";
+import { Board, create_board } from "./board";
+import { Group, Move, Player, Unit, UnitConstructor, all_unit_types, which_groups } from "./entity";
 import { ISerializable, randint } from "./language";
-import { GameBoard, Rule, starting_coordinates_by_group, unit_count_by_type } from "./rule";
+import { GameBoard, Rule, starting_coordinates_by_group, unit_count_by_type, unit_count_per_group } from "./rule";
 
 export class InsufficientSupply extends Error { }
 
@@ -10,6 +10,21 @@ export enum GameStatus
     Ongoing,
     WonByPlayer1,
     WonByPlayer2
+}
+
+export class GroupLayout {
+    constructor(public unit_type_ids: number[] = []) {
+        if (unit_type_ids.length == 0) {
+            this.unit_type_ids = every_possible_layout[randint(every_possible_layout.length)]
+        } else if (unit_type_ids.length != unit_count_per_group) {
+            throw Error("wrong number of units")
+        }
+    }
+}
+
+export class PlayerLayout {
+    constructor(public player: Player, public layout: [GroupLayout, GroupLayout]) {
+    }
 }
 
 export class GameRound implements ISerializable
@@ -29,8 +44,10 @@ export class GameRound implements ISerializable
         if (!Rule.validate_move(this.board, this.group_to_move, move)) throw Error("invalid move")
         let next_board = Rule.proceed(this.board, move)
 
-        let p1_alive = Rule.alive(next_board, 0) || Rule.alive(next_board, 2)
-        let p2_alive = Rule.alive(next_board, 1) || Rule.alive(next_board, 3)
+        let p1_alive = Rule.alive(next_board, which_groups[Player.P1][0]) 
+                    || Rule.alive(next_board, which_groups[Player.P1][1])
+        let p2_alive = Rule.alive(next_board, which_groups[Player.P2][0]) 
+                    || Rule.alive(next_board, which_groups[Player.P2][1])
 
         if (!p1_alive || !p2_alive) {
             if (!p1_alive && !p2_alive) {
@@ -65,6 +82,13 @@ export class GameRound implements ISerializable
             move)
     }
 
+    modify_layout(move: Move) {
+        //todo: verify layout
+        let u = this.board.units.at(move.to)
+        this.board.units.put(move.to, this.board.units.remove(move.from))
+        this.board.units.put(move.from, u)
+    }
+
     get status(): GameStatus
     {
         return this._status
@@ -74,24 +98,24 @@ export class GameRound implements ISerializable
         return Rule.validate_move(this.board, this.group_to_move, move)
     }
 
-    static set_out(board: Board<Unit>): void
+    static set_out(board: Board<Unit>, layout: PlayerLayout): void
     {
-        for (let group = 0; group < 4; ++group) {
-            let layout_type_id = every_possible_layout[randint(every_possible_layout.length)]
+        for (let g of [0, 1]) {
+            let group = which_groups[layout.player][g]
+            let unit_type_ids = layout.layout[g].unit_type_ids
             let coords = starting_coordinates_by_group(group as Group)
-            for (let i = 0; i < layout_type_id.length; ++i) {
-                let unit = new all_unit_types[layout_type_id[i] - 1](group as Group)
+            for (let i = 0; i < unit_type_ids.length; ++i) {
+                let unit = new all_unit_types[unit_type_ids[i] - 1](group as Group)
                 unit.lock_down(layout_allowed_types[i])
                 board.put(coords[i], unit)
             }
         }
     }
 
-    static new_game(): GameRound
-    {
-        let board_ctor = create_serializable_board_ctor<Unit, UnitConstructor>(UnitConstructor)
-        let board = new board_ctor()
-        this.set_out(board)
+    static new_game_by_layout(p1: PlayerLayout, p2: PlayerLayout | undefined = undefined): GameRound {
+        let board = create_board<Unit, UnitConstructor>(UnitConstructor)
+        this.set_out(board, p1)
+        if (p2) this.set_out(board, p2)
         return new GameRound(0, new GameBoard(board), 0, null)
     }
 
@@ -103,22 +127,21 @@ export class GameRound implements ISerializable
         ])
     }
 
-    static deserialize(payload: string): GameRound
-    {
-        // let [round_count, players_supply, board_payload, 
-        //      players_actions, victims] = JSON.parse(payload);
+    // static deserialize(payload: string): GameRound
+    // {
+    //     // let [round_count, players_supply, board_payload, 
+    //     //      players_actions, victims] = JSON.parse(payload);
 
-        // let board = <SerializableBoard<Unit>> create_serializable_board_ctor(
-        //     UnitConstructor).deserialize(board_payload);
+    //     // let board = <SerializableBoard<Unit>> create_serializable_board_ctor(
+    //     //     UnitConstructor).deserialize(board_payload);
 
-        // return new GameRound(
-        //     round_count, 
-        //     new GameBoard(board), 
-        //     last_round_actions, 
-        //     );
-        payload
-        return GameRound.new_game()
-    }
+    //     // return new GameRound(
+    //     //     round_count, 
+    //     //     new GameBoard(board), 
+    //     //     last_round_actions, 
+    //     //     );
+    //     return GameRound.new_game_by_layout()
+    // }
 }
 
 const fst_row_types = [3,4,5,6,7]

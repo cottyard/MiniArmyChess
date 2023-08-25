@@ -1,4 +1,4 @@
-import { IGameUiFacade } from '../game'
+import { GameUiFacade } from '../game_context'
 import { GameCanvas, Position } from './canvas'
 import { CanvasUnitFactory, PaintMode } from './canvas_entity'
 import { GameBoard, Rule } from '../../common/rule'
@@ -7,18 +7,13 @@ import { g } from '../../common/global'
 import { IComponent } from './dom_helper'
 import { event_box } from './ui'
 
-export interface IBoardDisplay extends IComponent
-{
-    displaying_board: GameBoard
-    highlight(coord: Coordinate): void
-    freeze_selection(): void
-    unfreeze_selection(): void
-}
-
 const group_indicator_position = new Position(7.5*g.settings.grid_size, g.settings.grid_size)
 
-export class BoardDisplay implements IBoardDisplay
+type DisplayMode = 'layout' | 'game'
+
+export class BoardDisplay implements IComponent
 {
+    mode: DisplayMode = 'layout'
     canvas: GameCanvas
 
     hovering: Coordinate | null = null
@@ -28,7 +23,7 @@ export class BoardDisplay implements IBoardDisplay
     displaying_board: GameBoard
     displaying_move: Move | null
 
-    constructor(public game: IGameUiFacade)
+    constructor(public game: GameUiFacade)
     {
         this.canvas = new GameCanvas(
             <HTMLCanvasElement> document.getElementById('background'),
@@ -148,21 +143,33 @@ export class BoardDisplay implements IBoardDisplay
         this.hovering = c
         let unit = this.game.context.present.board.units.at(c)
         let current_group = this.game.context.present.group_to_move
-        if (this.selected == null){
-            if (this.selection_frozen) return
-            if (unit == null) return
-            if (unit.group != current_group) return
-            this.selected = c
+
+        if (this.mode == 'game') {
+            if (this.selected == null){
+                if (this.selection_frozen) return
+                if (unit == null) return
+                if (unit.group != current_group) return
+                this.selected = c
+            } else {
+                if (unit != null && unit.group == current_group) {
+                    this.selected = c
+                } else {
+                    let m = new Move(this.selected, this.hovering)
+                    this.game.submit_move(m)
+                    this.selected = null
+                }
+            }   
         } else {
-            
-            if (unit != null && unit.group == current_group) {
+            if (this.selected == null){
+                if (unit == null) return
                 this.selected = c
             } else {
                 let m = new Move(this.selected, this.hovering)
                 this.game.submit_move(m)
                 this.selected = null
-            }
+            }   
         }
+        
         this.render_indicators()
     }
 
@@ -181,11 +188,13 @@ export class BoardDisplay implements IBoardDisplay
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
 
-        let gi = group_indicator_position
-        for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
-            gi = rotate_counter_clockwise(gi)
+        if (this.mode == 'game') {
+            let gi = group_indicator_position
+            for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
+                gi = rotate_counter_clockwise(gi)
+            }
+            this.canvas.paint_group_indicator(gi)
         }
-        this.canvas.paint_group_indicator(gi)
 
         let move = this.game.context.present.last_move
         if (move) {
@@ -201,8 +210,10 @@ export class BoardDisplay implements IBoardDisplay
         }
         if (this.selected){
             this.canvas.paint_grid_indicator(this.selected, g.styles.STYLE_BLACK, 4)
-            for (let c of Rule.get_move_options(this.game.context.present.board, this.selected).as_list()) {
-                this.canvas.paint_grid_indicator(c, g.styles.STYLE_GREEN, 2, 10)
+            if (this.mode == 'game') {
+                for (let c of Rule.get_move_options(this.game.context.present.board, this.selected).as_list()) {
+                    this.canvas.paint_grid_indicator(c, g.styles.STYLE_GREEN, 2, 10)
+                }
             }
         }
     }

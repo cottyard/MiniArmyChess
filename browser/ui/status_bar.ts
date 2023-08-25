@@ -1,8 +1,8 @@
 //import { Player, Players } from "../../common/entity"
 import { Coordinate, Unit, which_player} from "../../common/entity"
 import { GameStatus } from "../../common/game_round"
-import { IGameUiFacade } from "../game"
-import { IBoardDisplay } from "./board_display"
+import { GameUiFacade } from "../game_context"
+import { BoardDisplay } from "./board_display"
 import { type_to_literal } from "./canvas_entity"
 import { IComponent, DomHelper } from "./dom_helper"
 
@@ -15,8 +15,8 @@ export class StatusBar implements IComponent
     cursor: Coordinate | undefined = undefined
     constructor(
         public dom_element: HTMLDivElement,
-        public board_display: IBoardDisplay,
-        public game: IGameUiFacade)
+        public board_display: BoardDisplay,
+        public game: GameUiFacade)
     {
         // setInterval(() =>
         // {

@@ -136,8 +136,16 @@ interface SerializableBoardConstructor<T extends ISerializable & ICopyable<T>, _
     deserialize(payload: string): SerializableBoard<T>;
 }
 
-export function create_serializable_board_ctor<T extends ISerializable & ICopyable<T>, 
-                                               C extends IDeserializable<T>>
+export function create_board<T extends ISerializable & ICopyable<T>,
+                             C extends IDeserializable<T>>(unit_ctor: C)
+    : SerializableBoard<T>
+{
+    let board_ctor = create_serializable_board_ctor<T, C>(unit_ctor)
+    return new board_ctor()
+}
+
+function create_serializable_board_ctor<T extends ISerializable & ICopyable<T>, 
+                                        C extends IDeserializable<T>>
     (unit_ctor: C): SerializableBoardConstructor<T, C>
 {
     return class _ extends SerializableBoard<T>
