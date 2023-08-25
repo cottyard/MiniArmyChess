@@ -195,7 +195,7 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
         }
         return p
     }
-    lock_on(type_ids: number[]): void {
+    lock_down(type_ids: number[]): void {
         for (let id = 1; id <= all_unit_types.length; ++id) {
             if (type_ids.find((i => i == id)) == undefined) {
                 this.rule_out(id)

@@ -186,7 +186,7 @@ export class Rule
                 possible_attackers.push(attacker_type)
             }
         }
-        attacker.lock_on(possible_attackers)
+        attacker.lock_down(possible_attackers)
 
         let possible_defenders = []
         for (let defender_type = 1; defender_type <= all_unit_types.length; ++defender_type) {
@@ -194,7 +194,7 @@ export class Rule
                 possible_defenders.push(defender_type)
             }
         }
-        defender.lock_on(possible_defenders)
+        defender.lock_down(possible_defenders)
 
         if (attacker.type == Scout && call == JudgeCall.LOST) {
             defender.reveal()
@@ -450,7 +450,8 @@ export class GameBoard{
         function solve(type_id: number): number {
             let candidates = units_of_type(type_id)
             function assume_and_solve(candidate_index: number, remaining: number): number {
-                if (candidate_index == candidates.length || candidates.length - candidate_index < remaining) return 0
+                if (candidate_index == candidates.length || 
+                    candidates.length - candidate_index < remaining) return 0
                 let solutions = 0
                 let unit_index = candidates[candidate_index]
                 if (assumption[unit_index] == 0) {
@@ -481,7 +482,7 @@ export class GameBoard{
             for (let j = 0; j < units.length; ++j) {
                 if (solved_choices[i][j]) candidates.push(j + 1)
             }
-            units[i].lock_on(candidates)
+            units[i].lock_down(candidates)
         }
     }
 }

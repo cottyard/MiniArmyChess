@@ -46,8 +46,6 @@ export class GameRound implements ISerializable
             }
         }
 
-        // todo: add choke logic
-
         let next_group = this.group_to_move
         if (this._status == GameStatus.Ongoing) {   
             for (let i = 1; i < 4; ++i) {
@@ -83,7 +81,7 @@ export class GameRound implements ISerializable
             let coords = starting_coordinates_by_group(group as Group)
             for (let i = 0; i < layout_type_id.length; ++i) {
                 let unit = new all_unit_types[layout_type_id[i] - 1](group as Group)
-                unit.lock_on(layout_allowed_types[i])
+                unit.lock_down(layout_allowed_types[i])
                 board.put(coords[i], unit)
             }
         }
