@@ -46,11 +46,13 @@ export class GameRound implements ISerializable
             }
         }
 
+        // todo: add choke logic
+
         let next_group = this.group_to_move
         if (this._status == GameStatus.Ongoing) {   
             for (let i = 1; i < 4; ++i) {
                 let g = (this.group_to_move + i) % 4 as Group
-                if (Rule.alive(next_board, g)) {
+                if (Rule.has_valid_move(next_board, g)) {
                     next_group = g
                     break
                 }
@@ -98,7 +100,7 @@ export class GameRound implements ISerializable
     serialize(): string {
         return JSON.stringify([
             this.round_count, 
-            this.board.unit.serialize(), 
+            this.board.units.serialize(), 
             this.last_move == null? null : this.last_move.serialize()
         ])
     }
@@ -133,17 +135,16 @@ const layout_allowed_types = [
 ]
 
 const every_possible_layout: number[][] = (function () {
-    
     let unit_count = [...unit_count_by_type]
     let picked: number[] = []
     let layouts: number[][] = []
-    function solve(piece: number): number {
-        let choices = layout_allowed_types[piece]
+    function solve(unit: number): number {
+        let choices = layout_allowed_types[unit]
         let solution_count = 0
         for (let i = 0; i < choices.length; ++i) {
             let unit_type = choices[i]
             if (unit_count[unit_type - 1] == 0) continue
-            if (piece == layout_allowed_types.length - 1) {
+            if (unit == layout_allowed_types.length - 1) {
                 ++solution_count
                 picked.push(unit_type)
                 layouts.push([...picked])
@@ -151,7 +152,7 @@ const every_possible_layout: number[][] = (function () {
             } else {
                 --unit_count[unit_type - 1]
                 picked.push(unit_type)
-                solution_count += solve(piece + 1)
+                solution_count += solve(unit + 1)
                 picked.pop()
                 ++unit_count[unit_type - 1]
             }

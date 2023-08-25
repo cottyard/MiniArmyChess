@@ -8,7 +8,6 @@ import { IComponent, DomHelper } from "./dom_helper"
 
 function observation_literal(unit: Unit): string {
     return unit.possible_types().map((id)=>type_to_literal(id)).join(' ')
-    
 }
 
 export class StatusBar implements IComponent
@@ -66,7 +65,7 @@ export class StatusBar implements IComponent
         }
 
         if (this.cursor) {
-            let unit = this.game.context.present.board.unit.at(this.cursor)
+            let unit = this.game.context.present.board.units.at(this.cursor)
             if (unit == null) return
             if (unit.owner == which_player(this.game.context.present.group_to_move)) return
             this.dom_element.appendChild(DomHelper.create_text(

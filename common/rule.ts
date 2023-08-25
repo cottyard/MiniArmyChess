@@ -151,7 +151,7 @@ export const rail_joint = function () {
 
 function find_unit(board: GameBoard, group: Group, type: UnitConstructor): Unit | null {
     let found = null
-    board.unit.iterate_units((unit, _) => {
+    board.units.iterate_units((unit, _) => {
         if (unit.group == group && unit.type.id == type.id) {
             found = unit
         }
@@ -163,15 +163,20 @@ export class Rule
 {
     static alive(board: GameBoard, group: Group): boolean {
         let alive = false
-        board.unit.iterate_units((unit, coord) => {
-            if (unit.group == group) {
-                // todo: fix - add choke logic
-                if (this.get_move_options(board, coord).size() > 0) {
-                    alive = true
-                }
-            }
+        board.units.iterate_units((unit, _) => {
+            if (unit.group == group) alive = true
         })
         return alive
+    }
+
+    static has_valid_move(board: GameBoard, group: Group): boolean {
+        let has_valid_move = false
+        board.units.iterate_units((unit, coord) => {
+            if (unit.group == group && this.get_move_options(board, coord).size() > 0) {
+                has_valid_move = true
+            }
+        })
+        return has_valid_move
     }
 
     static update_observation_on_combat(board: GameBoard, attacker: Unit, defender: Unit, call: JudgeCall): void {
@@ -195,9 +200,11 @@ export class Rule
             defender.reveal()
         }
         if (attacker.type == Tank && call != JudgeCall.WON) {
+            attacker.reveal()
             this.reveal_base(board, attacker.group)
         }
         if (defender.type == Tank && call != JudgeCall.LOST) {
+            defender.reveal()
             this.reveal_base(board, defender.group)
         }
     }
@@ -210,7 +217,7 @@ export class Rule
 
     static proceed(_board: GameBoard, move: Move): GameBoard {
         let board = _board.copy()
-        let attacker = board.unit.at(move.from)
+        let attacker = board.units.at(move.from)
         if (attacker == null) throw new Error('null piece')
 
         let normal_moves = this.get_move_options(board, move.from, false)
@@ -222,9 +229,7 @@ export class Rule
             attacker.rule_out(Base.id)
         }
 
-        let defender = board.unit.at(move.to)
-
-        board.unit.remove(move.from)
+        let defender = board.units.at(move.to)
 
         let keep_attacker = false
         let keep_defender = false
@@ -244,35 +249,39 @@ export class Rule
             }
 
             this.update_observation_on_combat(board, attacker, defender, call)
+        }
 
+        if (defender && !keep_defender) {
+            board.units.remove(move.to)
+            board.outcasts.push(defender)
             if (defender.type == Base) {
-                let dg = defender.group
-                board.unit.iterate_units((unit, coord) => {
-                    if (unit.group == dg) {
-                        board.unit.remove(coord)
-                    }
-                })
+                board.clear_group(defender.group)
             }
         }
 
+        board.units.remove(move.from)
         if (keep_attacker) {
-            board.unit.put(move.to, attacker)
-        } else if (!keep_defender) {
-            board.unit.remove(move.to)
+            board.units.put(move.to, attacker)
+        } else {
+            board.outcasts.push(attacker)
         }
+
+        board.auto_reason(attacker.group)
+        if (defender) board.auto_reason(defender.group)
+
         return board
     }
 
     static get_move_options(
             board: GameBoard, at: Coordinate, enable_scout: boolean = true): HashSet<Coordinate> {
-        let unit = board.unit.at(at)
+        let unit = board.units.at(at)
         let options = new HashSet<Coordinate>()
         if (unit == null) return options
         if (unit.type == Mine || unit.type == Base) return options
         let player = unit.owner
 
         function collect(c: Coordinate): "move" | "attack" | "occupied" {
-            let piece = board.unit.at(c)
+            let piece = board.units.at(c)
             if (piece == null) {
                 options.put(c)
                 return "move"
@@ -352,7 +361,7 @@ export class Rule
     }
 
     static validate_move(board: GameBoard, group: Group, move: Move): boolean{
-        let attacker = board.unit.at(move.from)
+        let attacker = board.units.at(move.from)
         if (attacker == null) return false
         if (attacker.group != group) return false
         let options = this.get_move_options(board, move.from)
@@ -390,10 +399,89 @@ export class Rule
 }
 
 export class GameBoard{
-    constructor(public unit: SerializableBoard<Unit>){
+    constructor(public units: SerializableBoard<Unit>, public outcasts: Unit[] = []){
     }
     copy(): GameBoard {
-        return new GameBoard(this.unit.copy())
+        return new GameBoard(this.units.copy(), this.outcasts.map((u)=>u.copy()))
+    }
+    clear_group(group: Group): void {
+        this.units.iterate_units((unit, coord) => {
+            if (unit.group == group) this.units.remove(coord)
+        })
+        this.outcasts = this.outcasts.filter((unit) => unit.group != group)
+    }
+    get_group(group: Group): Unit[] {
+        let units: Unit[] = []
+        this.units.iterate_units((unit, _) => {
+            if (unit.group == group) units.push(unit)
+        })
+        return units.concat(this.outcasts.filter((unit) => unit.group == group))
+    }
+    auto_reason(group: Group) {
+        let units = this.get_group(group)
+        if (units.length != starting_coordinates.length) {
+            if (units.length == 0) return
+            else throw Error('wrong unit number')
+        }
+        let units_choices: number[][] = units.map((u)=>u.possible_types())
+        let solved_choices: boolean[][] = units.map(()=>new Array(unit_count_by_type.length).fill(false))
+        let assumption: number[] = new Array(units_choices.length).fill(0)
+        
+        function units_of_type(type_id: number): number[] {
+            let unit_indexes: number[] = []
+            for (let i = 0; i < units_choices.length; ++i) {
+                for (let choice of units_choices[i]) {
+                    if (choice == type_id) {
+                        unit_indexes.push(i)
+                        break
+                    }
+                }
+            }
+            return unit_indexes
+        }
+
+        function record_solution() {
+            for (let i = 0; i < assumption.length; ++i) {
+                if (assumption[i] == undefined) throw Error("expect type id")
+                solved_choices[i][assumption[i] - 1] = true
+            }
+        }
+        
+        function solve(type_id: number): number {
+            let candidates = units_of_type(type_id)
+            function assume_and_solve(candidate_index: number, remaining: number): number {
+                if (candidate_index == candidates.length || candidates.length - candidate_index < remaining) return 0
+                let solutions = 0
+                let unit_index = candidates[candidate_index]
+                if (assumption[unit_index] == 0) {
+                    assumption[unit_index] = type_id
+                    if (remaining > 1) {
+                        solutions += assume_and_solve(candidate_index + 1, remaining - 1)
+                    } else {
+                        if (type_id == unit_count_by_type.length) {
+                            ++solutions
+                            record_solution()
+                        } else {
+                            solutions += solve(type_id + 1)
+                        }
+                    }
+                    assumption[unit_index] = 0
+                }
+                solutions += assume_and_solve(candidate_index + 1, remaining)
+                return solutions
+            }
+        
+            if (candidates.length <= 0) throw Error("no candidate")
+            return assume_and_solve(0, unit_count_by_type[type_id - 1])
+        }
+        
+        solve(1)
+        for (let i = 0; i < units.length; ++i) {
+            let candidates = []
+            for (let j = 0; j < units.length; ++j) {
+                if (solved_choices[i][j]) candidates.push(j + 1)
+            }
+            units[i].lock_on(candidates)
+        }
     }
 }
-

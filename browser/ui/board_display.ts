@@ -146,7 +146,7 @@ export class BoardDisplay implements IBoardDisplay
         let c = this.get_coordinate(event)
         if (c == undefined) return
         this.hovering = c
-        let unit = this.game.context.present.board.unit.at(c)
+        let unit = this.game.context.present.board.units.at(c)
         let current_group = this.game.context.present.group_to_move
         if (this.selected == null){
             if (this.selection_frozen) return
@@ -172,10 +172,10 @@ export class BoardDisplay implements IBoardDisplay
 
     render_board(){
         this.canvas.clear_canvas(this.canvas.st_ctx)
-        this.displaying_board.unit.iterate_units((unit, coord) => {
+        this.displaying_board.units.iterate_units((unit, coord) => {
             let current_player = which_player(this.game.context.present.group_to_move)
             let mode = PaintMode.Normal
-            if (current_player != unit.owner) {
+            if (current_player != unit.owner && unit.possible_types().length > 1) {
                 mode = PaintMode.Hidden
             }
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
