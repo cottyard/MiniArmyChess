@@ -16,17 +16,20 @@ export class Hall {
     private query_handle: NodeJS.Timeout
 
     constructor(public username: string) {
-        this.query_handle = setInterval(() => {
-            Net.query_hall(this.username, (response) => {
-                if (response == res_hall_full) {
-                    this.status = HallStatus.Full
-                    return
-                }
-                this.info = JSON.parse(response)
-                this.status = HallStatus.LoggedIn
-                event_box.emit("refresh hall", null)
-            })
-        }, hall_signal_interval)
+        this.query_handle = setInterval(this.query_hall.bind(this), hall_signal_interval)
+        this.query_hall()
+    }
+
+    query_hall() {
+        Net.query_hall(this.username, (response) => {
+            if (response == res_hall_full) {
+                this.status = HallStatus.Full
+                return
+            }
+            this.info = JSON.parse(response)
+            this.status = HallStatus.LoggedIn
+            event_box.emit("refresh hall", null)
+        })
     }
     destroy() {
         clearInterval(this.query_handle)
