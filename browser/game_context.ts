@@ -1,6 +1,7 @@
 import { IServerAgent, LayoutAgent } from "./agent"
 import { Move, Player, Players } from "../common/entity"
 import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game_round"
+import { Hall } from "./hall"
 
 export enum GameContextStatus
 {
@@ -151,6 +152,7 @@ export class GameUiFacade
     player_name: string = "Anonymous"
     context: GameContext = new GameContext()
     agent: IServerAgent | null = null
+    hall: Hall | null = null
 
     constructor()
     {
@@ -191,6 +193,12 @@ export class GameUiFacade
         }
     }
 
+    initialize_hall(name: string): void {
+        if (this.hall != null) {
+            this.hall.destroy()
+        }
+        this.hall = new Hall(name)
+    }
     // new_game(): void
     // {
     //     if (this.agent)

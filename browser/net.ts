@@ -1,9 +1,9 @@
-type callback = (res: string) => void;
-type timeout_callback = () => void;
+type CallBack = (res: string) => void;
+type TimeoutCallBack = () => void;
 
 export class Net
 {
-    static remote_post(url: string, next: callback, data: string | null = null): void
+    static remote_post(url: string, next: CallBack, data: string | null = null): void
     {
         (function try_post()
         {
@@ -38,7 +38,7 @@ export class Net
         })();
     }
     
-    static remote_get(url: string, next: callback, timeout: timeout_callback): void
+    static remote_get(url: string, next: CallBack, timeout: TimeoutCallBack): void
     {
         let req = new XMLHttpRequest();
         req.open('GET', `${ url }`);
@@ -69,10 +69,10 @@ export class Net
         req.send();
     }
     
-    static new_game(player_name: string, next: callback)
-    {
-        this.remote_post(`session/join-as/${ player_name }`, next);
-    }
+    // static new_game(player_name: string, next: callback)
+    // {
+    //     this.remote_post(`session/join-as/${ player_name }`, next);
+    // }
     
     // static submit_move(game_id: string, 
     //                    player_move: PlayerMove, 
@@ -85,20 +85,25 @@ export class Net
     //         player_move.serialize());
     // }
     
-    static query_match(session_id: string, next: callback)
-    {
-        let q = this.query_match.bind(this);
-        this.remote_get(`session/${ session_id }/status`, next, () => {
-            q(session_id, next);
-        });
-    }
+    // static query_match(session_id: string, next: callback)
+    // {
+    //     let q = this.query_match.bind(this);
+    //     this.remote_get(`session/${ session_id }/status`, next, () => {
+    //         q(session_id, next);
+    //     });
+    // }
     
-    static fetch_game(game_id: string, next: callback)
-    {
-        let f = this.fetch_game.bind(this);
-        this.remote_get(`game/${ game_id }`, next, () => {
-            f(game_id, next);
-        });
+    // static fetch_game(game_id: string, next: callback)
+    // {
+    //     let f = this.fetch_game.bind(this);
+    //     this.remote_get(`game/${ game_id }`, next, () => {
+    //         f(game_id, next);
+    //     });
+    // }
+
+    static query_hall(name: string, next: CallBack) {
+        let q = this.query_hall.bind(this)
+        this.remote_get(`hall/${ name }`, next, () => { q(name, next) })
     }
 }
 

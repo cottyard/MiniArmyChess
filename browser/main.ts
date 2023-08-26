@@ -18,7 +18,8 @@ export function main()
     //     <HTMLDivElement> document.getElementById('button-bar'), board_display, facade);
 
     let hall_panel = new HallPanel(
-        <HTMLDivElement> document.getElementById('hall-panel'))
+        <HTMLDivElement> document.getElementById('hall-panel'),
+        facade)
 
     ui_components.push(board_display)
     ui_components.push(status_bar)
@@ -26,20 +27,25 @@ export function main()
     // ui_components.push(button_bar);
 
     event_box.subscribe('refresh ui', _ => {
-        for (let c of ui_components) {
-            c.render()
-        }
+        board_display.render()
+        status_bar.render()
     })
 
     event_box.subscribe('refresh status', arg => {
         status_bar.render(arg)
     })
 
+    event_box.subscribe('refresh hall', _ => {
+        hall_panel.render()
+    })
+
     // event_box.subscribe("refresh counter", secs => {
     //     button_bar.update_counter(secs);
     // });
 
-    event_box.emit("refresh ui", null)
+    for (let c of ui_components) {
+        c.render()
+    }
 }
 
 window.onload = main;
