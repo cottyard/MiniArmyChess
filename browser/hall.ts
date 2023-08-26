@@ -22,12 +22,17 @@ export class Hall {
 
     query_hall() {
         Net.query_hall(this.username, (response) => {
-            if (response == res_hall_full) {
+            let res = JSON.parse(response)
+            if (res == res_hall_full) {
                 this.status = HallStatus.Full
+                event_box.emit("refresh hall", null)
                 return
             }
-            this.info = JSON.parse(response)
+            this.info = res
             this.status = HallStatus.LoggedIn
+            event_box.emit("refresh hall", null)
+        }, () => {
+            this.status = HallStatus.LoggedOut
             event_box.emit("refresh hall", null)
         })
     }

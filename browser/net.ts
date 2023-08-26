@@ -1,77 +1,67 @@
-type CallBack = (res: string) => void;
-type TimeoutCallBack = () => void;
+type CallBack = (res: string) => void
+type TimeoutCallBack = () => void
+
+const timeout = 8000
 
 export class Net
 {
-    static remote_post(url: string, next: CallBack, data: string | null = null): void
+    static remote_post(url: string, data: string, next: CallBack, fail: TimeoutCallBack): void
     {
-        (function try_post()
-        {
-            let req = new XMLHttpRequest();
-            req.open('POST', `${ url }`);
-            req.timeout = 8000;
-    
-            req.onreadystatechange = () =>
-            {
-                if (req.readyState == req.DONE)
-                {
-                    if (req.status == 200)
-                    {
-                        next(req.responseText);
-                    }
-                }
-            };
-    
-            req.onerror = () =>
-            {
-                console.log('post error:', url);
-                try_post();
-            };
-    
-            req.ontimeout = () =>
-            {
-                console.log('post timeout:', url);
-                try_post();
-            };
-    
-            req.send(data);
-        })();
-    }
-    
-    static remote_get(url: string, next: CallBack, timeout: TimeoutCallBack): void
-    {
-        let req = new XMLHttpRequest();
-        req.open('GET', `${ url }`);
-        req.timeout = 8000;
-    
-        req.onreadystatechange = () =>
-        {
-            if (req.readyState == req.DONE)
-            {
-                if (req.status == 200)
-                {
-                    next(req.responseText);
+        let req = new XMLHttpRequest()
+        req.open('POST', `${ url }`)
+        req.timeout = timeout
+
+        req.onreadystatechange = () =>{
+            if (req.readyState == req.DONE){
+                if (req.status == 200){
+                    next(req.responseText)
                 }
             }
-        };
+        }
+
+        req.onerror = () =>{
+            console.log('post error:', url)
+            fail()
+        }
+
+        req.ontimeout = () =>{
+            console.log('post timeout:', url)
+            fail()
+        }
+
+        req.send(data)
+    }
     
-        req.onerror = () =>
-        {
-            console.log('error:', url);
-        };
+    static remote_get(url: string, next: CallBack, fail: TimeoutCallBack): void
+    {
+        let req = new XMLHttpRequest()
+        req.open('GET', `${ url }`)
+        req.timeout = timeout
     
-        req.ontimeout = () =>
-        {
-            console.log('timeout:', url);
-            timeout();
-        };
+        req.onreadystatechange = () =>{
+            if (req.readyState == req.DONE){
+                if (req.status == 200){
+                    next(req.responseText)
+                }
+            }
+        }
     
-        req.send();
+        req.onerror = () =>{
+            console.log('get error:', url)
+            fail()
+        }
+    
+        req.ontimeout = () =>{
+            console.log('get timeout:', url)
+            fail()
+        }
+    
+        req.send()
     }
     
     // static new_game(player_name: string, next: callback)
     // {
-    //     this.remote_post(`session/join-as/${ player_name }`, next);
+    //     this.remote_post(`session/join-as/${ player_name }`, next)
     // }
     
     // static submit_move(game_id: string, 
@@ -82,28 +72,27 @@ export class Net
     //     this.remote_post(
     //         `game/${ game_id }/move?consumed=${ milliseconds_consumed }`, 
     //         next, 
-    //         player_move.serialize());
+    //         player_move.serialize())
     // }
     
     // static query_match(session_id: string, next: callback)
     // {
-    //     let q = this.query_match.bind(this);
+    //     let q = this.query_match.bind(this)
     //     this.remote_get(`session/${ session_id }/status`, next, () => {
-    //         q(session_id, next);
-    //     });
+    //         q(session_id, next)
+    //     })
     // }
     
     // static fetch_game(game_id: string, next: callback)
     // {
-    //     let f = this.fetch_game.bind(this);
+    //     let f = this.fetch_game.bind(this)
     //     this.remote_get(`game/${ game_id }`, next, () => {
-    //         f(game_id, next);
-    //     });
+    //         f(game_id, next)
+    //     })
     // }
 
-    static query_hall(name: string, next: CallBack) {
-        let q = this.query_hall.bind(this)
-        this.remote_get(`hall/${ name }`, next, () => { q(name, next) })
+    static query_hall(name: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_get(`hall/${ name }`, next, fail)
     }
 }
 

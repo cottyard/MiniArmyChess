@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { Players, Player, Move } from '../../common/entity'
 import { GameRound, GameStatus } from '../../common/game_round'
 import { HashSet, IHashable } from '../../common/language'
-import { UserStatus, HallDigest, hall_signal_interval } from '../../common/protocol'
+import { UserStatus, HallDigest, hall_signal_interval, res_hall_full } from '../../common/protocol'
 
 type SessionId = string
 type ServerGameRoundId = string
@@ -38,6 +38,7 @@ class User {
 }
 
 let online_users: Map<string, User> = new Map()
+let challenges: Map<string, string> = new Map()
 
 function signout_user(name: string) {
     online_users.delete(name)
@@ -68,9 +69,36 @@ const get_hall = async (req: Request, res: Response, next: NextFunction) => {
         if (success) {
             return res.status(200).json(hall_digest())
         } else {
-            return res.status(200).json('Hall is full')
+            return res.status(200).json(res_hall_full)
         }
     }
+}
+
+const send_challenge = async (req: Request, res: Response, next: NextFunction) => {
+    let name: string = req.params.name
+    let other: string = req.params.other
+    challenges.set(name, other)
+    return res.status(200)
+}
+
+const accept_challenge = async (req: Request, res: Response, next: NextFunction) => {
+    let name: string = req.params.name
+    let other: string = req.params.other
+
+    if (challenges.get(other) == name) {
+        challenges.delete(other)
+        //set up session
+        return res.status(200).json('todo: session id')
+    } else {
+        return res.status(404)
+    }
+}
+
+const watch = async (req: Request, res: Response, next: NextFunction) => {
+    let name: string = req.params.name
+    let other: string = req.params.other
+    // todo: get other's session
+    return res.status(200)
 }
 
 const MAX_USER_COUNT = 10
@@ -275,4 +303,4 @@ function login(name: string): boolean {
 //     }
 // }
 
-export default {get_hall}//{ get_game, get_session_status, submit_move, join_new_session }
+export default {get_hall, send_challenge, accept_challenge, watch}//{ get_game, get_session_status, submit_move, join_new_session }

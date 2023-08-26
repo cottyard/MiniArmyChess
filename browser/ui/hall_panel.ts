@@ -4,6 +4,26 @@ import { GameUiFacade } from '../game_context'
 import { HallStatus } from '../hall'
 import { DomHelper, IComponent } from './dom_helper'
 
+function hall_status_indicator(status: string): HTMLElement {
+    let div = DomHelper.create_div({
+        'border-top': '1px dashed black',
+        'border-bottom': '1px dashed black',
+    })
+    div.appendChild(DomHelper.create_text(
+        status, {
+            display: 'flex',
+            flexDirection: 'row',
+            'font-weight': 'bold',
+            height: '30px',
+            margin: '5px',
+            flex: 1,
+            'background-color': g.styles.STYLE_GREY,
+            justifyContent: 'center'
+        })
+    )
+    return div
+}
+
 export class HallPanel implements IComponent
 {
     constructor(public dom_element: HTMLDivElement, public game: GameUiFacade)
@@ -36,29 +56,13 @@ export class HallPanel implements IComponent
                 }))
             div.appendChild(DomHelper.create_text('!', {}))
             this.dom_element.appendChild(div)
+
             if (this.game.hall.status == HallStatus.Full) {
-                this.dom_element.appendChild(DomHelper.create_text(
-                    "Hall is full.", {padding: "10px"}))
+                this.dom_element.appendChild(hall_status_indicator("hall is full"))
             } else if (this.game.hall.status == HallStatus.LoggedOut) {
-                this.dom_element.appendChild(DomHelper.create_text(
-                    "Logging in...", {padding: "10px"}))
+                this.dom_element.appendChild(hall_status_indicator("offline"))
             } else {
-                let div = DomHelper.create_div({
-                    'border-top': '1px dashed black',
-                    'border-bottom': '1px dashed black',
-                })
-                div.appendChild(DomHelper.create_text(
-                    "online", {
-                        display: 'flex',
-                        flexDirection: 'row',
-                        'font-weight': 'bold',
-                        height: '30px',
-                        margin: '5px',
-                        flex: 1,
-                        'background-color': g.styles.STYLE_GREY,
-                        justifyContent: 'center'
-                    }))
-                this.dom_element.appendChild(div)
+                this.dom_element.appendChild(hall_status_indicator("online"))
                 if (this.game.hall.info) {
                     for (let name in this.game.hall.info) {
                         this.dom_element.appendChild(
