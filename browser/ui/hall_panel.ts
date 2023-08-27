@@ -39,8 +39,8 @@ export class HallPanel implements IComponent
     render()
     {
         this.dom_element.innerHTML = ""
-
-        if (this.game.hall != null) {
+        let game = this.game
+        if (game.hall != null) {
             let div = DomHelper.create_div({
                 display: "flex",
                 flexDirection: "row",
@@ -49,7 +49,7 @@ export class HallPanel implements IComponent
             })
             div.appendChild(DomHelper.create_text('Welcome,', {}))
             div.appendChild(DomHelper.create_text(
-                this.game.hall.username, {
+                game.hall.username, {
                     'font-weight': 'bold',
                     'padding-left': '3px',
                     'padding-right': '3px'
@@ -57,19 +57,21 @@ export class HallPanel implements IComponent
             div.appendChild(DomHelper.create_text('!', {}))
             this.dom_element.appendChild(div)
 
-            if (this.game.hall.status == HallStatus.Full) {
+            if (game.hall.status == HallStatus.Full) {
                 this.dom_element.appendChild(hall_status_indicator("hall is full"))
-            } else if (this.game.hall.status == HallStatus.LoggedOut) {
+            } else if (game.hall.status == HallStatus.LoggedOut) {
                 this.dom_element.appendChild(hall_status_indicator("offline"))
             } else {
                 this.dom_element.appendChild(hall_status_indicator("online"))
-                if (this.game.hall.info) {
-                    for (let name in this.game.hall.info) {
+                if (game.hall.info) {
+                    for (let name in game.hall.info.users) {
                         this.dom_element.appendChild(
-                            create_item(name, this.game.hall.info[name]))
+                            this.create_item(
+                                name, game.hall.info.users[name],
+                                game.hall.info.challengers.find((n) => n == name) != undefined,
+                                game.hall.info.challenging == name))
                     }
                 }
-                
             }
         } else {
             let div = DomHelper.create_div({
@@ -101,13 +103,85 @@ export class HallPanel implements IComponent
             login.disabled = true
             login.onclick = () => { 
                 let n = name.value
-                if (n) this.game.initialize_hall(n)
+                if (n) game.initialize_hall(n)
             }
             div.appendChild(name)
             div.appendChild(btn_div)
             btn_div.appendChild(login)
             this.dom_element.appendChild(div)
         }
+    }
+
+    create_item(name: string, status: UserStatus, is_challenger: boolean, challenging: boolean): HTMLElement {
+        let game = this.game
+        let status_info
+        if (status == UserStatus.Idle) {
+            status_info = "Idle"
+        } else {
+            status_info = "Playing"
+        }
+        let div = DomHelper.create_div({
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "stretch",
+            margin: "3px",
+            padding: "1px",
+            boxSizing: "border-box",
+            height: '30px',
+        })
+        div.appendChild(DomHelper.create_text(name, {
+            display: 'flex',
+            flex: 1,
+            fontWeight: 'bold',
+        }))
+        let div2 = DomHelper.create_div({
+            display: 'flex',
+            flex: 2
+        })
+        div2.appendChild(DomHelper.create_text(status_info, {
+            backgroundColor: g.styles.STYLE_GREEN_LIGHT,
+            borderRadius: '3px',
+            padding: '2px',
+            fontWeight: 'bold'}))
+        if (game.hall && game.hall.username != name) {
+            let action = DomHelper.create_button({display: 'flex', alignSelf: 'center', flexDirection: 'row-reverse'})
+            if (is_challenger) {
+                action.innerText = "Accept"
+                action.onclick = () => {
+                    action.innerText = "Accepting"
+                    action.disabled = true
+                    game.accept_challenge(name)
+                }
+            } else {
+                if (status == UserStatus.Idle) {
+                    if (challenging) {
+                        action.innerText = "Challenging"
+                        action.disabled = true
+                    } else {
+                        action.innerText = "Challenge"
+                        action.onclick = () => {
+                            action.innerText = "Challenging"
+                            action.disabled = true
+                            game.send_challenge(name)
+                        }
+                    }
+                } else {
+                    action.innerText = "Watch"
+                    action.onclick = () => { 
+                        game.watch(name)
+                    }
+                }
+            }
+            let div3 = DomHelper.create_div({
+                display: 'flex',
+                flex: 1,
+                flexDirection: 'row-reverse',
+            })
+            div3.appendChild(action)
+            div2.appendChild(div3)
+        }
+        div.appendChild(div2)
+        return div
     }
 
     // render_player(index: number): HTMLElement
@@ -156,38 +230,4 @@ export class HallPanel implements IComponent
     //     div.addEventListener("mouseup", mouseup)
     //     return div
     // }
-}
-
-function create_item(name: string, status: UserStatus): HTMLElement {
-    let status_info
-    if (status == UserStatus.Idle) {
-        status_info = "Idle"
-    } else {
-        status_info = "Playing"
-    }
-    let div = DomHelper.create_div({
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "stretch",
-        margin: "3px",
-        padding: "1px",
-        boxSizing: "border-box",
-        height: '30px',
-    })
-    div.appendChild(DomHelper.create_text(name, {
-        display: 'flex',
-        flex: 1,
-        fontWeight: 'bold',
-    }))
-    let div2 = DomHelper.create_div({
-        display: 'flex',
-        flex: 1,
-    })
-    div2.appendChild(DomHelper.create_text(status_info, {
-        backgroundColor: g.styles.STYLE_GREEN_LIGHT,
-        borderRadius: '3px',
-        padding: '2px',
-        fontWeight: 'bold'}))
-    div.appendChild(div2)
-    return div
 }

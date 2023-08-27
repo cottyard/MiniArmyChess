@@ -94,5 +94,17 @@ export class Net
     static query_hall(name: string, next: CallBack, fail: TimeoutCallBack) {
         this.remote_get(`hall/${ name }`, next, fail)
     }
+
+    static send_challenge(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_post(`hall/${ name }/challenge`, other, next, fail)
+    }
+
+    static accept_challenge(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_post(`hall/${ name }/challenge/accept`, other, next, fail)
+    }
+
+    static watch(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_post(`hall/${ name }/watch`, other, next, fail)
+    }
 }
 

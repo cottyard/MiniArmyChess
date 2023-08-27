@@ -42,10 +42,21 @@ let challenges: Map<string, string> = new Map()
 
 function signout_user(name: string) {
     online_users.delete(name)
+    challenges.delete(name)
 }
 
-function hall_digest(): HallDigest {
-    let digest: HallDigest = {}
+function hall_digest(name: string): HallDigest {
+    let challengers = []
+    for (let challenger of challenges.keys()) {
+        if (challenges.get(challenger) == name) {
+            challengers.push(challenger)
+        }
+    }
+    let digest: HallDigest = {
+        users: {},
+        challengers: challengers,
+        challenging: challenges.has(name) ? challenges.get(name)! : null
+    }
     let now = Date.now()
     for (let name of online_users.keys()) {
         let u = online_users.get(name)!
@@ -53,7 +64,7 @@ function hall_digest(): HallDigest {
             signout_user(name)
             continue
         }
-        digest[u.name] = u.status
+        digest.users[u.name] = u.status
     }
     return digest
 }
@@ -63,40 +74,47 @@ const get_hall = async (req: Request, res: Response, next: NextFunction) => {
     if (online_users.has(name)) {
         let user = online_users.get(name)!
         user.last_check_in = Date.now()
-        return res.status(200).json(hall_digest())
+        return res.status(200).json(hall_digest(name))
     } else {
         let success = login(name)
         if (success) {
-            return res.status(200).json(hall_digest())
+            return res.status(200).json(hall_digest(name))
         } else {
             return res.status(200).json(res_hall_full)
         }
     }
 }
 
-const send_challenge = async (req: Request, res: Response, next: NextFunction) => {
+export const send_challenge = async (req: Request, res: Response, next: NextFunction) => {
     let name: string = req.params.name
-    let other: string = req.params.other
-    challenges.set(name, other)
-    return res.status(200)
+    let other: string = req.body
+    console.log('challenge', other)
+    if (name != other) {
+        challenges.set(name, other)
+        return res.status(200).json()
+    } else {
+        return res.status(400).json()
+    }
 }
 
 const accept_challenge = async (req: Request, res: Response, next: NextFunction) => {
     let name: string = req.params.name
-    let other: string = req.params.other
+    let other: string = req.body
+    console.log('accept', other)
 
     if (challenges.get(other) == name) {
         challenges.delete(other)
         //set up session
         return res.status(200).json('todo: session id')
     } else {
-        return res.status(404)
+        return res.status(404).json()
     }
 }
 
 const watch = async (req: Request, res: Response, next: NextFunction) => {
     let name: string = req.params.name
-    let other: string = req.params.other
+    let other: string = req.body
+    console.log('watch', other)
     // todo: get other's session
     return res.status(200)
 }

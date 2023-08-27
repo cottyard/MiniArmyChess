@@ -2,6 +2,7 @@ import { IServerAgent, LayoutAgent } from "./agent"
 import { Move, Player, Players } from "../common/entity"
 import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game_round"
 import { Hall } from "./hall"
+import { Net } from "./net"
 
 export enum GameContextStatus
 {
@@ -198,6 +199,22 @@ export class GameUiFacade
             this.hall.destroy()
         }
         this.hall = new Hall(name)
+    }
+
+    watch(name: string) {
+        if (this.hall) {
+            Net.watch(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
+        }
+    }
+    send_challenge(name: string) {
+        if (this.hall) {
+            Net.send_challenge(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
+        }
+    }
+    accept_challenge(name: string) {
+        if (this.hall) {
+            Net.accept_challenge(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
+        }
     }
     // new_game(): void
     // {
