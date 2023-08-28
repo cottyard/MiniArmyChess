@@ -154,6 +154,7 @@ export class GameUiFacade
     context: GameContext = new GameContext()
     agent: IServerAgent | null = null
     hall: Hall | null = null
+    saved_layout: PlayerLayout | undefined = undefined
 
     constructor()
     {
@@ -182,9 +183,7 @@ export class GameUiFacade
     // AI_mode()
     // {
     //     this.destroy_agent()
-    //     this.context = new GameContext()
-    //     this.agent = new AiAgent(this.context)
-    // }
+    //     this.context = new GameContextthis.context.present.get_layout(Player.P1)
 
     submit_move(move: Move): void 
     {
@@ -206,21 +205,35 @@ export class GameUiFacade
             Net.watch(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
         }
     }
+    current_layout(): PlayerLayout | undefined {
+        let layout = this.context.present.get_layout(Player.P1)
+        if (layout == undefined) {
+            layout = this.saved_layout
+        } else {
+            this.saved_layout = layout
+        }
+        return layout
+    }
     send_challenge(name: string) {
         if (this.hall) {
-            Net.send_challenge(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
+            let layout = this.current_layout()
+            if (layout) {
+                Net.send_challenge(
+                    this.hall.username, name, 
+                    layout.serialize(),
+                    ()=>{}, ()=>{console.log('fail')})
+            }
         }
     }
     accept_challenge(name: string) {
         if (this.hall) {
-            Net.accept_challenge(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
+            let layout = this.current_layout()
+            if (layout) {
+                Net.accept_challenge(
+                    this.hall.username, name,
+                    layout.serialize(),
+                    ()=>{}, ()=>{console.log('fail')})
+            }
         }
     }
-    // new_game(): void
-    // {
-    //     if (this.agent)
-    //     {
-    //         this.agent.new_game(this.player_name)
-    //     }
-    // }
 }

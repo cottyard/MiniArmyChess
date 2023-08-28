@@ -12,7 +12,7 @@ export enum GameStatus
     WonByPlayer2
 }
 
-export class GroupLayout {
+export class GroupLayout implements ISerializable{
     constructor(public unit_type_ids: number[] = []) {
         if (unit_type_ids.length == 0) {
             this.unit_type_ids = every_possible_layout[randint(every_possible_layout.length)]
@@ -20,10 +20,23 @@ export class GroupLayout {
             throw Error("wrong number of units")
         }
     }
+    serialize(): string {
+        return JSON.stringify(this.unit_type_ids)
+    }
+    static deserialize(payload: string): GroupLayout {
+        return new GroupLayout(JSON.parse(payload))
+    }
 }
 
-export class PlayerLayout {
+export class PlayerLayout implements ISerializable {
     constructor(public player: Player, public layout: [GroupLayout, GroupLayout]) {
+    }
+    serialize(): string {
+        return JSON.stringify([this.player, this.layout])
+    }
+    static deserialize(payload: string): PlayerLayout {
+        let [p, ls] = JSON.parse(payload)
+        return new PlayerLayout(p, ls.map((l: string)=>GroupLayout.deserialize(l)))
     }
 }
 
@@ -82,11 +95,31 @@ export class GameRound implements ISerializable
             move)
     }
 
-    modify_layout(move: Move) {
-        //todo: verify layout
-        let u = this.board.units.at(move.to)
-        this.board.units.put(move.to, this.board.units.remove(move.from))
-        this.board.units.put(move.from, u)
+    modify_layout(move: Move): boolean {
+        let from = this.board.units.at(move.from)
+        let to = this.board.units.at(move.to)
+        if (from && to && from.group == to.group) {
+            this.board.units.put(move.to, from)
+            this.board.units.put(move.from, to)
+            if (this.verify_present_layout(from.owner)) return true
+            this.board.units.put(move.to, to)
+            this.board.units.put(move.from, from)
+        }
+        return false
+    }
+
+    verify_present_layout(player: Player): boolean {
+        let player_layout = this.get_layout(player)
+        if (!player_layout) throw Error('bad layout')
+        for (let group_layout of player_layout.layout) {
+            let type_ids = group_layout.unit_type_ids
+            for (let i = 0; i < type_ids.length; ++i) {
+                if (layout_allowed_types[i].find((id) => id == type_ids[i]) == undefined) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 
     get status(): GameStatus
@@ -98,11 +131,10 @@ export class GameRound implements ISerializable
         return Rule.validate_move(this.board, this.group_to_move, move)
     }
 
-    static set_out(board: Board<Unit>, layout: PlayerLayout): void
-    {
-        for (let g of [0, 1]) {
-            let group = which_groups[layout.player][g]
-            let unit_type_ids = layout.layout[g].unit_type_ids
+    static set_out(board: Board<Unit>, layout: PlayerLayout): void{
+        for (let i of [0, 1]) {
+            let group = which_groups[layout.player][i]
+            let unit_type_ids = layout.layout[i].unit_type_ids
             let coords = starting_coordinates_by_group(group as Group)
             for (let i = 0; i < unit_type_ids.length; ++i) {
                 let unit = new all_unit_types[unit_type_ids[i] - 1](group as Group)
@@ -110,6 +142,22 @@ export class GameRound implements ISerializable
                 board.put(coords[i], unit)
             }
         }
+    }
+
+    get_layout(player: Player): PlayerLayout | undefined {
+        let layouts = []
+        for (let g of which_groups[player]) {
+            let type_ids = []
+            for (let coord of starting_coordinates_by_group(g)) {
+                let u = this.board.units.at(coord)
+                if (u == null) {
+                    return undefined
+                }
+                type_ids.push(u.type.id)
+            }
+            layouts.push(new GroupLayout(type_ids))
+        }
+        return new PlayerLayout(player, layouts as [GroupLayout, GroupLayout])
     }
 
     static new_game_by_layout(p1: PlayerLayout, p2: PlayerLayout | undefined = undefined): GameRound {

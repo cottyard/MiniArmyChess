@@ -59,52 +59,42 @@ export class Net
         req.send()
     }
     
-    // static new_game(player_name: string, next: callback)
-    // {
-    //     this.remote_post(`session/join-as/${ player_name }`, next)
-    // }
-    
-    // static submit_move(game_id: string, 
-    //                    player_move: PlayerMove, 
-    //                    milliseconds_consumed: number, 
-    //                    next: callback)
-    // {
-    //     this.remote_post(
-    //         `game/${ game_id }/move?consumed=${ milliseconds_consumed }`, 
-    //         next, 
-    //         player_move.serialize())
-    // }
-    
-    // static query_match(session_id: string, next: callback)
-    // {
-    //     let q = this.query_match.bind(this)
-    //     this.remote_get(`session/${ session_id }/status`, next, () => {
-    //         q(session_id, next)
-    //     })
-    // }
-    
-    // static fetch_game(game_id: string, next: callback)
-    // {
-    //     let f = this.fetch_game.bind(this)
-    //     this.remote_get(`game/${ game_id }`, next, () => {
-    //         f(game_id, next)
-    //     })
-    // }
-
     static query_hall(name: string, next: CallBack, fail: TimeoutCallBack) {
-        this.remote_get(`hall/${ name }`, next, fail)
+        this.remote_get(`hall/${name}`, next, fail)
     }
 
-    static send_challenge(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
-        this.remote_post(`hall/${ name }/challenge`, other, next, fail)
+    static send_challenge(name: string, other: string, layout: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_post(`hall/${name}/challenge?user=${other}`, layout, next, fail)
     }
 
-    static accept_challenge(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
-        this.remote_post(`hall/${ name }/challenge/accept`, other, next, fail)
+    static accept_challenge(name: string, other: string, layout: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_post(`hall/${name}/challenge/accept?user=${other}`, layout, next, fail)
     }
 
     static watch(name: string, other: string, next: CallBack, fail: TimeoutCallBack) {
-        this.remote_post(`hall/${ name }/watch`, other, next, fail)
+        this.remote_post(`hall/${name}/watch?user=${other}`, '', next, fail)
+    }
+
+    static get_session(id: string, name: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_get(`session/${id}?user=${name}`, next, fail)
+    }
+
+    static get_game(id: string, next: CallBack, fail: TimeoutCallBack) {
+        this.remote_get(`session/${id}/game`, next, fail)
+    }
+
+    static submit_move(
+        session: string,
+        name: string,
+        move: string, 
+        milliseconds_consumed: number, 
+        next: CallBack,
+        fail: TimeoutCallBack)
+    {
+        this.remote_post(
+            `session/${session}/game?user=${name}&time=${milliseconds_consumed}`,
+            move,
+            next, 
+            fail)
     }
 }
-

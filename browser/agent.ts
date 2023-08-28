@@ -29,8 +29,9 @@ export class LayoutAgent extends GameAgent
     
     submit_move(move: Move): void
     {
-        this.context.present.modify_layout(move)
-        event_box.emit("refresh ui", null)
+        if (this.context.present.modify_layout(move)) {
+            event_box.emit("refresh ui", null)
+        }
     }
 }
 
