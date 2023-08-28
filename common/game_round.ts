@@ -3,10 +3,9 @@ import { Group, Move, Player, Unit, UnitConstructor, all_unit_types, which_group
 import { ISerializable, randint } from "./language";
 import { GameBoard, Rule, starting_coordinates_by_group, unit_count_by_type, unit_count_per_group } from "./rule";
 
-export class InsufficientSupply extends Error { }
+export class InsufficientSupply extends Error {}
 
-export enum GameStatus
-{
+export enum GameStatus{
     Ongoing,
     WonByPlayer1,
     WonByPlayer2
@@ -32,11 +31,12 @@ export class PlayerLayout implements ISerializable {
     constructor(public player: Player, public layout: [GroupLayout, GroupLayout]) {
     }
     serialize(): string {
-        return JSON.stringify([this.player, this.layout])
+        let layout_literals = this.layout.map((l) => l.serialize())
+        return JSON.stringify([this.player, layout_literals])
     }
     static deserialize(payload: string): PlayerLayout {
-        let [p, ls] = JSON.parse(payload)
-        return new PlayerLayout(p, ls.map((l: string)=>GroupLayout.deserialize(l)))
+        let [p, layout_literals] = JSON.parse(payload)
+        return new PlayerLayout(p, layout_literals.map((l: string)=>GroupLayout.deserialize(l)))
     }
 }
 
@@ -170,26 +170,21 @@ export class GameRound implements ISerializable
     serialize(): string {
         return JSON.stringify([
             this.round_count, 
-            this.board.units.serialize(), 
+            this.board.serialize(),
+            this.group_to_move,
             this.last_move == null? null : this.last_move.serialize()
         ])
     }
 
-    // static deserialize(payload: string): GameRound
-    // {
-    //     // let [round_count, players_supply, board_payload, 
-    //     //      players_actions, victims] = JSON.parse(payload);
-
-    //     // let board = <SerializableBoard<Unit>> create_serializable_board_ctor(
-    //     //     UnitConstructor).deserialize(board_payload);
-
-    //     // return new GameRound(
-    //     //     round_count, 
-    //     //     new GameBoard(board), 
-    //     //     last_round_actions, 
-    //     //     );
-    //     return GameRound.new_game_by_layout()
-    // }
+    static deserialize(payload: string): GameRound
+    {
+        let [round_count, board_payload, group_to_move, last_move_payload] = JSON.parse(payload)
+        return new GameRound(
+            round_count, 
+            GameBoard.deserialize(board_payload), 
+            group_to_move,
+            Move.deserialize(last_move_payload))
+    }
 }
 
 const fst_row_types = [3,4,5,6,7]

@@ -1,7 +1,7 @@
-import { Board, SerializableBoard } from "./board";
+import { Board, SerializableBoard, create_serializable_board_ctor } from "./board";
 import { Tank, Base, Coord, Coordinate, Group, Mine, Move, Player, Scout, Unit, UnitConstructor, all_unit_types} from "./entity";
 import { g } from "./global";
-import { HashMap, HashSet } from "./language";
+import { HashMap, HashSet, ISerializable } from "./language";
 
 /* judge table decies what happens when a piece duels another */
 
@@ -151,7 +151,7 @@ export const rail_joint = function () {
 }()
 
 function find_unit(board: GameBoard, group: Group, type: UnitConstructor): Unit | null {
-    let found = null
+    let found: Unit | null = null
     board.units.iterate_units((unit, _) => {
         if (unit.group == group && unit.type.id == type.id) {
             found = unit
@@ -181,7 +181,7 @@ export class Rule
     }
 
     static update_observation_on_combat(board: GameBoard, attacker: Unit, defender: Unit, call: JudgeCall): void {
-        let possible_attackers = []
+        let possible_attackers: number[] = []
         for (let attacker_type = 1; attacker_type <= all_unit_types.length; ++attacker_type) {
             if (judge_table[attacker_type - 1][defender.type.id - 1] == call) {
                 possible_attackers.push(attacker_type)
@@ -189,7 +189,7 @@ export class Rule
         }
         attacker.lock_down(possible_attackers)
 
-        let possible_defenders = []
+        let possible_defenders: number[] = []
         for (let defender_type = 1; defender_type <= all_unit_types.length; ++defender_type) {
             if (judge_table[attacker.type.id - 1][defender_type - 1] == call) {
                 possible_defenders.push(defender_type)
@@ -399,11 +399,22 @@ export class Rule
     }
 }
 
-export class GameBoard{
+export class GameBoard implements ISerializable {
     constructor(public units: SerializableBoard<Unit>, public outcasts: Unit[] = []){
     }
     copy(): GameBoard {
         return new GameBoard(this.units.copy(), this.outcasts.map((u)=>u.copy()))
+    }
+    serialize(): string {
+        return JSON.stringify([this.units.serialize(), this.outcasts.map((u)=>u.serialize())])
+    }
+    static deserialize(payload: string): GameBoard{
+        let [board_payload, outcasts] = JSON.parse(payload)
+        let board = <SerializableBoard<Unit>>
+            create_serializable_board_ctor(UnitConstructor).deserialize(board_payload)
+        return new GameBoard(
+            board,
+            outcasts.map((o: string) => UnitConstructor.deserialize(o)))
     }
     clear_group(group: Group): void {
         this.units.iterate_units((unit, coord) => {
@@ -479,7 +490,7 @@ export class GameBoard{
         
         solve(1)
         for (let i = 0; i < units.length; ++i) {
-            let candidates = []
+            let candidates: number[] = []
             for (let j = 0; j < units.length; ++j) {
                 if (solved_choices[i][j]) candidates.push(j + 1)
             }

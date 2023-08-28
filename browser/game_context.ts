@@ -1,8 +1,9 @@
-import { IServerAgent, LayoutAgent } from "./agent"
+import { IServerAgent, LayoutAgent, OnlineAgent } from "./agent"
 import { Move, Player, Players } from "../common/entity"
 import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game_round"
 import { Hall } from "./hall"
 import { Net } from "./net"
+import { SessionId } from "../common/protocol"
 
 export enum GameContextStatus
 {
@@ -33,30 +34,25 @@ export class GameContext
 
     private _player: Player
 
-    constructor()
-    {
+    constructor(){
         this._player = Player.P1
     }
 
-    get player()
-    {
+    get player(){
         return this._player
     }
 
-    set player(value: Player)
-    {
+    set player(value: Player){
         this._player = value
     }
 
-    new_round(round: GameRound): void 
-    {
+    new_round(round: GameRound): void {
         this.rounds.push(round)
         this.round_begin_time = Date.now()
         this.update_status()
     }
 
-    update_status(): void
-    {
+    update_status(): void{
         switch (this.present.status)
         {
             case GameStatus.WonByPlayer1:
@@ -150,40 +146,32 @@ export class GameContext
 
 export class GameUiFacade
 {
-    player_name: string = "Anonymous"
     context: GameContext = new GameContext()
     agent: IServerAgent | null = null
     hall: Hall | null = null
     saved_layout: PlayerLayout | undefined = undefined
 
-    constructor()
-    {
-    }
+    constructor(){}
 
     private destroy_agent()
     {
-        if (this.agent)
-        {
+        if (this.agent){
             this.agent.destroy()
         }
     }
-
-    // online_mode()
-    // {
-    //     this.destroy_agent()
-    //     this.context = new GameContext()
-    //     //this.agent = new OnlineAgent(this.context)
-    // }
 
     layout_mode() {
         this.destroy_agent()
         this.context = new GameContext()
         this.agent = new LayoutAgent(this.context)
     }
-    // AI_mode()
-    // {
-    //     this.destroy_agent()
-    //     this.context = new GameContextthis.context.present.get_layout(Player.P1)
+
+    online_mode(session_id: SessionId){
+        if (!this.hall) return
+        this.destroy_agent()
+        this.context = new GameContext()
+        this.agent = new OnlineAgent(this.context, session_id, this.hall.username)
+    }
 
     submit_move(move: Move): void 
     {
@@ -197,14 +185,15 @@ export class GameUiFacade
         if (this.hall != null) {
             this.hall.destroy()
         }
-        this.hall = new Hall(name)
+        this.hall = new Hall(name, this)
     }
 
     watch(name: string) {
-        if (this.hall) {
-            Net.watch(this.hall.username, name, ()=>{}, ()=>{console.log('fail')})
-        }
+        Net.watch(name, (session_id: string)=>{
+            this.online_mode(session_id)
+        }, ()=>{console.log('fail')})
     }
+
     current_layout(): PlayerLayout | undefined {
         let layout = this.context.present.get_layout(Player.P1)
         if (layout == undefined) {
@@ -214,6 +203,7 @@ export class GameUiFacade
         }
         return layout
     }
+
     send_challenge(name: string) {
         if (this.hall) {
             let layout = this.current_layout()
@@ -221,18 +211,19 @@ export class GameUiFacade
                 Net.send_challenge(
                     this.hall.username, name, 
                     layout.serialize(),
-                    ()=>{}, ()=>{console.log('fail')})
+                    ()=>{}, ()=>{console.log('fail challenge')})
             }
         }
     }
+
     accept_challenge(name: string) {
         if (this.hall) {
             let layout = this.current_layout()
             if (layout) {
                 Net.accept_challenge(
-                    this.hall.username, name,
-                    layout.serialize(),
-                    ()=>{}, ()=>{console.log('fail')})
+                    this.hall.username, name, layout.serialize(), ()=>{}, ()=>{
+                        console.log('fail accept')
+                    })
             }
         }
     }

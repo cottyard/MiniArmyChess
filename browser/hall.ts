@@ -1,7 +1,8 @@
 import { Net } from "./net"
 
-import { HallDigest, hall_signal_interval, res_hall_full } from '../common/protocol'
+import { HallDigest, SessionId, hall_signal_interval, res_hall_full } from '../common/protocol'
 import { event_box } from "./ui/ui"
+import { GameUiFacade } from "./game_context"
 
 export enum HallStatus {
     LoggedOut,
@@ -12,10 +13,10 @@ export enum HallStatus {
 export class Hall {
     info: HallDigest | null = null
     status: HallStatus = HallStatus.LoggedOut
-
+    session: SessionId | null = null
     private query_handle: NodeJS.Timeout
 
-    constructor(public username: string) {
+    constructor(public username: string, public game: GameUiFacade) {
         this.query_handle = setInterval(this.query_hall.bind(this), hall_signal_interval)
         this.query_hall()
     }
@@ -30,6 +31,12 @@ export class Hall {
             }
             this.info = res
             this.status = HallStatus.LoggedIn
+            if (this.info && this.info.session != this.session) {
+                this.session = this.info.session
+                if (this.session) {
+                    this.game.online_mode(this.session)
+                }
+            }
             event_box.emit("refresh hall", null)
         }, () => {
             this.status = HallStatus.LoggedOut

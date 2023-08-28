@@ -1,5 +1,6 @@
-import { Player, Players } from "./entity"
+import { Player, Players} from "./entity"
 
+export type SessionId = string
 export enum UserStatus {
     Idle,
     InGame
@@ -10,12 +11,14 @@ export type HallDigest = {
     users: {[key: string]: UserStatus}
     challengers: string[]
     challenging: string | null
+    session: string | null
 }
 export const hall_signal_interval = 5000
 export const session_signal_interval = 2500
 export type SessionDigest = {
+    opponent: string,
+    as: Player,
     last_update: number,
-    players: Players<string>,
     time: Players<number>
 }
 export function find_player(names: Players<string>, name: string): Player {
@@ -23,4 +26,4 @@ export function find_player(names: Players<string>, name: string): Player {
         if (names[p] == name) return p
     }
     throw Error('player not found')
-} 
+}
