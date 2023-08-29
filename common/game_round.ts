@@ -162,8 +162,12 @@ export class GameRound implements ISerializable
 
     static new_game_by_layout(p1: PlayerLayout, p2: PlayerLayout | undefined = undefined): GameRound {
         let board = create_board<Unit, UnitConstructor>(UnitConstructor)
+        p1.player = Player.P1
         this.set_out(board, p1)
-        if (p2) this.set_out(board, p2)
+        if (p2) {
+            p2.player = Player.P2
+            this.set_out(board, p2)
+        }
         return new GameRound(0, new GameBoard(board), 0, null)
     }
 
@@ -183,7 +187,7 @@ export class GameRound implements ISerializable
             round_count, 
             GameBoard.deserialize(board_payload), 
             group_to_move,
-            Move.deserialize(last_move_payload))
+            last_move_payload == null ? null : Move.deserialize(last_move_payload))
     }
 }
 

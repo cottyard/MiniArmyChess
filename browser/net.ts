@@ -15,6 +15,8 @@ export class Net
             if (req.readyState == req.DONE){
                 if (req.status == 200){
                     next(req.responseText)
+                } else {
+                    fail()
                 }
             }
         }
@@ -42,6 +44,8 @@ export class Net
             if (req.readyState == req.DONE){
                 if (req.status == 200){
                     next(req.responseText)
+                } else {
+                    fail()
                 }
             }
         }
@@ -96,6 +100,8 @@ export class Net
             move,
             next, 
             fail,
-            ()=>{})
+            ()=>{
+                console.log('submit timeout')
+            })
     }
 }

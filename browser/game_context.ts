@@ -73,10 +73,10 @@ export class GameContext
         }
     }
 
-    new_game(p1: PlayerLayout, p2: PlayerLayout): void {
-        this.rounds = [ GameRound.new_game_by_layout(p1, p2) ]
-        this.consumed_msec = Players.create(() => 0)
-    }
+    // new_game(p1: PlayerLayout, p2: PlayerLayout): void {
+    //     this.rounds = [ GameRound.new_game_by_layout(p1, p2) ]
+    //     this.consumed_msec = Players.create(() => 0)
+    // }
 
     prepare_layout(): void {
         this.rounds = [ GameRound.new_game_by_layout(new PlayerLayout(Player.P1, [new GroupLayout(), new GroupLayout()])) ]
@@ -144,8 +144,10 @@ export class GameContext
     }
 }
 
-export class GameUiFacade
-{
+export type GameMode = 'layout' | 'online'
+
+export class GameUiFacade{
+    game_mode: GameMode = 'layout'
     context: GameContext = new GameContext()
     agent: IServerAgent | null = null
     hall: Hall | null = null
@@ -153,8 +155,7 @@ export class GameUiFacade
 
     constructor(){}
 
-    private destroy_agent()
-    {
+    private destroy_agent(){
         if (this.agent){
             this.agent.destroy()
         }
@@ -162,15 +163,22 @@ export class GameUiFacade
 
     layout_mode() {
         this.destroy_agent()
-        this.context = new GameContext()
+        this.game_mode = 'layout'
         this.agent = new LayoutAgent(this.context)
     }
 
     online_mode(session_id: SessionId){
         if (!this.hall) return
         this.destroy_agent()
-        this.context = new GameContext()
+        this.game_mode = 'online'
         this.agent = new OnlineAgent(this.context, session_id, this.hall.username)
+    }
+
+    current_player(): Player {
+        if (this.game_mode == 'online') {
+            return (<OnlineAgent>this.agent).playing_as
+        }
+        return Player.P1
     }
 
     submit_move(move: Move): void 

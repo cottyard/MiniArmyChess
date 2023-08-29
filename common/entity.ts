@@ -8,7 +8,7 @@ export class Coordinate implements IHashable, ISerializable, ICopyable<Coordinat
 {
     constructor(public x: number, public y: number){
         if (!Coordinate.is_valid(x, y)){
-            throw new InvalidParameter("Coordinate")
+            throw new InvalidParameter(`Coordinate${x}${y}`)
         }
     }
 
@@ -40,11 +40,12 @@ export class Coordinate implements IHashable, ISerializable, ICopyable<Coordinat
     }
 
     serialize(): string{
-        return `${ this.x }${ this.y }`
+        return JSON.stringify([this.x, this.y])
     }
 
     static deserialize(payload: string): Coordinate{
-        return new Coordinate(parseInt(payload[0]), parseInt(payload[1]))
+        let [x, y] = JSON.parse(payload)
+        return new Coordinate(x, y)
     }
 
     static is_valid(x: number, y: number): boolean{
@@ -124,16 +125,6 @@ export function opponent(player: Player)
     return player == Player.P1 ? Player.P2 : Player.P1
 }
 
-export function deserialize_group(payload: string): Player
-{
-    return <Player> Player[<keyof typeof Player>('g' + payload)]
-}
-
-export function serialize_group(player: Player)
-{
-    return JSON.stringify(player)
-}
-
 export class Move implements ISerializable, ICopyable<Move>, IHashable
 {
     constructor(public from: Coordinate, public to: Coordinate)
@@ -152,12 +143,13 @@ export class Move implements ISerializable, ICopyable<Move>, IHashable
 
     serialize(): string
     {
-        return this.from.serialize() + this.to.serialize()
+        return JSON.stringify([this.from.serialize(), this.to.serialize()])
     }
 
     static deserialize(payload: string)
     {
-        return new Move(Coordinate.deserialize(payload.slice(0, 2)), Coordinate.deserialize(payload.slice(2, 4)))
+        let [from, to] = JSON.parse(payload)
+        return new Move(Coordinate.deserialize(from), Coordinate.deserialize(to))
     }
 
     copy(): Move
@@ -178,11 +170,10 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
     // each bit represents the possibility of being the corresponding type
     // in perspective of the opponent observer
     // higher bit means bigger type id
-    private observation = 0b11111111
-    public revealed = false
+    observation = 0b11111111
+    revealed = false
 
-    constructor(public group: Group){
-    }
+    constructor(public group: Group){}
 
     get owner(): Player {
         return which_player(this.group)
@@ -192,7 +183,7 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
         return ((1 << (type_id - 1)) & this.observation) != 0
     }
     possible_types(): number[] {
-        let p = []
+        let p: number[] = []
         for (let t of all_unit_types) {
             if (this.skeptical(t.id)) p.push(t.id)
         }
@@ -219,7 +210,7 @@ export abstract class Unit implements ISerializable, ICopyable<Unit>{
     }
 
     serialize(): string{
-        return JSON.stringify([this.type.name, this.group])
+        return JSON.stringify([this.type.id, this.group, this.revealed, this.observation])
     }
 
     copy(): Unit{
@@ -248,15 +239,15 @@ export const UnitConstructor: UnitConstructor = class _ extends Unit{
 
     static deserialize(payload: string): Unit
     {
-        let display: string, group: string
-        [display, group] = <[string, string, string]> JSON.parse(payload)
-
-        let type = unit_type_by_name.get(display)
-        if (!type)
-        {
+        let type_id: number, group: number, revealed: boolean, observation: number
+        [type_id, group, revealed, observation] = JSON.parse(payload)
+        let type = all_unit_types[type_id - 1]
+        if (!type){
             throw new Error('Unit.deserialize: no constructor')
         }
-        let unit = new type(deserialize_group(group))
+        let unit = new type(group as Group)
+        unit.revealed = revealed
+        unit.observation = observation
         return unit
     }
 }
@@ -289,5 +280,3 @@ export class Mine extends UnitConstructor{
 export const all_unit_types: UnitConstructor[] = [
     Base, Bomb, Artillery, Scout, Infantry, Armored, Tank, Mine
 ]
-
-const unit_type_by_name = new Map<string, UnitConstructor>()

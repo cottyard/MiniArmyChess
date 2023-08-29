@@ -2,7 +2,7 @@ import { GameUiFacade } from '../game_context'
 import { GameCanvas, Position } from './canvas'
 import { CanvasUnitFactory, PaintMode } from './canvas_entity'
 import { GameBoard, Rule } from '../../common/rule'
-import { Coordinate, Move, which_player } from '../../common/entity'
+import { Coordinate, Group, Move, Player, which_player } from '../../common/entity'
 import { g } from '../../common/global'
 import { IComponent } from './dom_helper'
 import { event_box } from './ui'
@@ -14,6 +14,7 @@ type DisplayMode = 'layout' | 'game'
 export class BoardDisplay implements IComponent
 {
     mode: DisplayMode = 'layout'
+    perspective: Player = Player.P1
     canvas: GameCanvas
 
     hovering: Coordinate | null = null
@@ -45,6 +46,10 @@ export class BoardDisplay implements IComponent
         this.displaying_move = null
 
         this.render_board()
+    }
+
+    set_perspective(player: Player): void {
+        this.perspective = player
     }
 
     render(): void {
@@ -142,7 +147,10 @@ export class BoardDisplay implements IComponent
         if (c == undefined) return
         this.hovering = c
         let unit = this.game.context.present.board.units.at(c)
-        let current_group = this.game.context.present.group_to_move
+        let current_group: Group | null = this.game.context.present.group_to_move
+        if (which_player(current_group) != this.perspective) {
+            current_group = null
+        }
 
         if (this.mode == 'game') {
             if (this.selected == null){
@@ -174,15 +182,16 @@ export class BoardDisplay implements IComponent
     }
 
     update_display(){
+        this.mode = this.game.game_mode == 'layout' ? 'layout' : 'game'
+        this.perspective = this.game.current_player()
         this.displaying_board = this.game.context.present.board
     }
 
     render_board(){
         this.canvas.clear_canvas(this.canvas.st_ctx)
         this.displaying_board.units.iterate_units((unit, coord) => {
-            let current_player = which_player(this.game.context.present.group_to_move)
             let mode = PaintMode.Normal
-            if (current_player != unit.owner && unit.possible_types().length > 1) {
+            if (this.perspective != unit.owner && unit.possible_types().length > 1) {
                 mode = PaintMode.Hidden
             }
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)

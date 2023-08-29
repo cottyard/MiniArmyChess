@@ -34,6 +34,7 @@ export class Hall {
             if (this.info && this.info.session != this.session) {
                 this.session = this.info.session
                 if (this.session) {
+                    console.log('starting session', this.session)
                     this.game.online_mode(this.session)
                 }
             }

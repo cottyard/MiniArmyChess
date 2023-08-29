@@ -1,6 +1,5 @@
 //import { Player, Players } from "../../common/entity"
-import { Coordinate, Unit, which_player} from "../../common/entity"
-import { GameStatus } from "../../common/game_round"
+import { Coordinate, Unit} from "../../common/entity"
 import { GameUiFacade } from "../game_context"
 import { BoardDisplay } from "./board_display"
 import { type_to_literal } from "./canvas_entity"
@@ -47,30 +46,33 @@ export class StatusBar implements IComponent
 
         let round_number = this.game.context.present.round_count
         this.dom_element.appendChild(DomHelper.create_text(
-            `Step ${ round_number }`,
-            {
+            `Step ${ round_number }`,{
                 'text-align': 'left',
                 fontWeight: "bold",
                 flexGrow: 1,
             }))
 
-        if (this.game.context.present.status != GameStatus.Ongoing) {
-            this.dom_element.appendChild(DomHelper.create_text(
-                "End",
-                {
-                    'text-align': 'center',
-                    fontWeight: "bold",
-                    flexGrow: 1,
-                }))
-        }
+        // if (this.game.context.present.status != GameStatus.Ongoing) {
+        //     this.dom_element.appendChild(DomHelper.create_text(
+        //         "End",{
+        //             'text-align': 'center',
+        //             fontWeight: "bold",
+        //             flexGrow: 1,
+        //         }))
+        // }
+        this.dom_element.appendChild(DomHelper.create_text(
+            this.game.context.present.status.toString() ,{
+                'text-align': 'center',
+                fontWeight: "bold",
+                flexGrow: 1,
+            }))
 
         if (this.cursor) {
             let unit = this.game.context.present.board.units.at(this.cursor)
             if (unit == null) return
-            if (unit.owner == which_player(this.game.context.present.group_to_move)) return
+            if (unit.owner == this.game.current_player()) return
             this.dom_element.appendChild(DomHelper.create_text(
-                observation_literal(unit),
-                {
+                observation_literal(unit),{
                     'text-align': 'right',
                     flexGrow: 1,
                 }))

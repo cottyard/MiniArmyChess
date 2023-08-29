@@ -66,7 +66,7 @@ function hall_digest(name: string): HallDigest {
             signout_user(user)
             continue
         }
-        digest.users[user] = user_heartbeat.has(user) ? UserStatus.InGame : UserStatus.Idle
+        digest.users[user] = user_session.has(user) ? UserStatus.InGame : UserStatus.Idle
     }
     return digest
 }
@@ -93,6 +93,12 @@ export const send_challenge = async (req: Request, res: Response, next: NextFunc
     console.log('challenge', other)
     if (name != other) {
         challenges.set(name, [other, layout])
+        if (challenges.has(other)) {
+            let [other_challenging, other_layout] = challenges.get(other)!
+            if (name == other_challenging) {
+                set_up_session(other, other_layout, name, layout)
+            }
+        }
         return res.sendStatus(200)
     } else {
         return res.sendStatus(400)
@@ -108,18 +114,23 @@ const accept_challenge = async (req: Request, res: Response, next: NextFunction)
     if (challenges.has(other)) {
         let [challenged, other_layout] = challenges.get(other)!
         if (challenged == name) {
-            let session_id = session_id_generator.gen()
-            sessions.set(session_id, new Session(session_id, {
-                [Player.P1]: other,
-                [Player.P2]: name
-            }, [other_layout, layout]))
-            challenges.delete(other)
-            user_session.set(name, new UserSession(session_id))
-            user_session.set(other, new UserSession(session_id))
+            set_up_session(other, other_layout, name, layout)
             return res.sendStatus(200)
         }
     } 
     return res.sendStatus(404)
+}
+
+function set_up_session(p1: string, layout1: PlayerLayout, p2: string, layout2: PlayerLayout) {
+    let session_id = session_id_generator.gen()
+    sessions.set(session_id, new Session(session_id, {
+        [Player.P1]: p1,
+        [Player.P2]: p2
+    }, [layout1, layout2]))
+    challenges.delete(p1)
+    challenges.delete(p2)
+    user_session.set(p1, new UserSession(session_id))
+    user_session.set(p2, new UserSession(session_id))
 }
 
 const watch = async (req: Request, res: Response, next: NextFunction) => {
@@ -158,12 +169,17 @@ class Session{
     touch(): void{
         this.last_access = Date.now()
     }
-    update(player: Player, move: Move, consumed_time: number) {
+    update(player: Player, move: Move, consumed_time: number): boolean {
         if (which_player(this.round.group_to_move) != player) return false
-        this.round = this.round.proceed(move)
-        this.players_time[player] += consumed_time
-        this.last_update = Date.now()
-        return true
+        try {
+            this.round = this.round.proceed(move)
+            this.players_time[player] += consumed_time
+            this.last_update = Date.now()
+            return true
+        }
+        catch {
+            return false
+        }
     }
 }
 
@@ -221,13 +237,16 @@ const submit_move = async (req: Request, res: Response, next: NextFunction) => {
     let id: string = req.params.id
     let name: string = <string>req.query.user
     let time: number = parseInt(<string>req.query.time)
-    let move: Move = Move.deserialize(JSON.parse(req.body))
     console.log('received move', req.body)
+    let move: Move = Move.deserialize(req.body)
 
     let session = sessions.get(id)
     if (!session) return res.sendStatus(404)
-    session.update(find_player(session.players_name, name), move, time)
-    return res.sendStatus(200)
+    if (session.update(find_player(session.players_name, name), move, time)) {
+        return res.sendStatus(200)
+    } else {
+        return res.sendStatus(400)
+    }
 }
 
 export default {get_hall, send_challenge, accept_challenge, watch, get_game, get_session, submit_move }
