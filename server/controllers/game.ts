@@ -217,7 +217,13 @@ const get_session = async (req: Request, res: Response, next: NextFunction) => {
     }
     recycle_sessions()
 
-    let player = find_player(session.players_name, player_name)
+    let player
+    try {
+        player = find_player(session.players_name, player_name)
+    } catch {
+        return res.sendStatus(400)
+    }
+    
     let opponent_name = session.players_name[opponent(player)]
 
     let digest: SessionDigest = {

@@ -257,6 +257,8 @@ export class Rule
             board.outcasts.push(defender)
             if (defender.type == Base) {
                 board.clear_group(defender.group)
+            } else {
+                defender.rule_out(Base.id)
             }
         }
 

@@ -19,14 +19,15 @@ export class InfoPanel
         let div = DomHelper.create_div({
             'border-bottom': '1px dashed black',
         })
-        div.appendChild(DomHelper.create_text('被吃', {
+        div.appendChild(DomHelper.create_text('阵亡', {
             display: 'flex',
             flex: 1,
             'font-weight': 'bold',
             height: '30px',
             margin: '5px',
             'background-color': g.styles.STYLE_GREY,
-            justifyContent: 'center'
+            justifyContent: 'center',
+            alignItems: 'center'
         }))
         this.dom_element.appendChild(div)
 

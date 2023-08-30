@@ -18,7 +18,8 @@ function hall_status_indicator(status: string): HTMLElement {
             margin: '5px',
             flex: 1,
             'background-color': g.styles.STYLE_GREY,
-            justifyContent: 'center'
+            justifyContent: 'center',
+            alignItems: 'center'
         })
     )
     return div
