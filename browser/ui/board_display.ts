@@ -7,7 +7,7 @@ import { g } from '../../common/global'
 import { IComponent } from './dom_helper'
 import { event_box } from './ui'
 
-const group_indicator_position = new Position(7.5*g.settings.grid_size, g.settings.grid_size)
+const group_indicator_position = new Position(7.5*g.grid_size, g.grid_size)
 
 type DisplayMode = 'layout' | 'game' | 'observe'
 
@@ -40,7 +40,6 @@ export class BoardDisplay implements IComponent
         this.canvas.animate.addEventListener("touchend", this.on_touch.bind(this))
 
         this.canvas.paint_background()
-        
 
         this.displaying_board = this.game.context.present.board
         this.displaying_move = null
@@ -72,8 +71,8 @@ export class BoardDisplay implements IComponent
     get_coordinate(event: MouseEvent): Coordinate | undefined
     {
         let rect = this.canvas.background.getBoundingClientRect()
-        let mouse_x = event.clientX - rect.left - g.settings.cvs_border_width
-        let mouse_y = event.clientY - rect.top - g.settings.cvs_border_width
+        let mouse_x = event.clientX - rect.left - g.cvs_border_width
+        let mouse_y = event.clientY - rect.top - g.cvs_border_width
         return GameCanvas.to_coordinate(mouse_x, mouse_y)
     }
 

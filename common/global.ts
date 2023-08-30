@@ -1,8 +1,12 @@
 class Module
 {
-    readonly cvs_size: number = 720
-    readonly grid_count: number = 11
-    readonly grid_center: number = 5
+    readonly cvs_size = 720
+    readonly grid_count = 11
+    readonly grid_center = 5
+    readonly grid_size = this.cvs_size / this.grid_count
+    readonly node_size = this.grid_size - 20
+    readonly cvs_border_width = 3
+    readonly piece_font = "40px Courier New"
     
     readonly styles = {
         'STYLE_GREY': "rgb(228, 228, 228)",
@@ -22,12 +26,6 @@ class Module
         'STYLE_YELLOW': '#EEEE00',
         'STYLE_TEAL': '#0292B7',
         'STYLE_TERQUOISE': '#1AC8DB'
-    }
-    settings = {
-        'cvs_size': this.cvs_size,
-        'cvs_border_width': 3,
-        'grid_size': this.cvs_size / this.grid_count,
-        'piece_font': "40px Courier New",
     }
 }
 

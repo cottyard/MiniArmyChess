@@ -28,12 +28,6 @@ export class HallPanel implements IComponent
 {
     constructor(public dom_element: HTMLDivElement, public game: GameUiFacade)
     {
-        DomHelper.apply_style(this.dom_element, {
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "stretch",
-            userSelect: "none",
-        })
     }
 
     render(){
@@ -93,6 +87,7 @@ export class HallPanel implements IComponent
             let name = DomHelper.create_textarea()
             name.textContent = ''
             name.onfocus = () => { name.select() }
+            name.autofocus = true
             name.style.width = "80px"
             name.style.resize = "none"
 

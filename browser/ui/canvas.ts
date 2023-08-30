@@ -24,10 +24,10 @@ export class GameCanvas
         this.animate = animate;
         this.animate_transparent = animate_transparent;
 
-        this.bg_ctx = this.set_canvas_attr(this.background, 1, g.settings.cvs_size, g.settings.cvs_border_width, false);
-        this.st_ctx = this.set_canvas_attr(this.static, 2, g.settings.cvs_size, g.settings.cvs_border_width, true);
-        this.am_ctx_t = this.set_canvas_attr(this.animate_transparent, 3, g.settings.cvs_size, g.settings.cvs_border_width, true);
-        this.am_ctx = this.set_canvas_attr(this.animate, 4, g.settings.cvs_size, g.settings.cvs_border_width, true);
+        this.bg_ctx = this.set_canvas_attr(this.background, 1, g.cvs_size, g.cvs_border_width, false);
+        this.st_ctx = this.set_canvas_attr(this.static, 2, g.cvs_size, g.cvs_border_width, true);
+        this.am_ctx_t = this.set_canvas_attr(this.animate_transparent, 3, g.cvs_size, g.cvs_border_width, true);
+        this.am_ctx = this.set_canvas_attr(this.animate, 4, g.cvs_size, g.cvs_border_width, true);
     }
 
     set_canvas_attr(cvs: HTMLCanvasElement, z_index: number, size: number, border_width: number, absolute: boolean): CanvasRenderingContext2D
@@ -50,22 +50,22 @@ export class GameCanvas
     static get_grid_center(coord: Coordinate): Position
     {
         return new Position(
-            coord.x * g.settings.grid_size + g.settings.grid_size / 2,
-            coord.y * g.settings.grid_size + g.settings.grid_size / 2);
+            coord.x * g.grid_size + g.grid_size / 2,
+            coord.y * g.grid_size + g.grid_size / 2);
     }
 
     static get_grid_position(coord: Coordinate): Position
     {
         return new Position(
-            coord.x * g.settings.grid_size,
-            coord.y * g.settings.grid_size);
+            coord.x * g.grid_size,
+            coord.y * g.grid_size);
     }
 
     static to_coordinate(pixel_x: number, pixel_y: number): Coordinate | undefined
     {
         function gridify(pixel: number)
         {
-            let i = Math.floor(pixel / g.settings.grid_size);
+            let i = Math.floor(pixel / g.grid_size);
             if (i < 0) { return 0; };
             if (i >= g.grid_count) { return g.grid_count - 1; };
             return i;
@@ -79,10 +79,10 @@ export class GameCanvas
         }
     }
 
-    paint_background()
-    {
-        let grid_size = g.settings.grid_size;
-        let grids = g.grid_count;
+    paint_background(){
+        let gs = g.grid_size
+        let offset = (g.grid_size - g.node_size) / 2
+        let grids = g.grid_count
 
         using(new Renderer(this.bg_ctx), (renderer) =>
         {
@@ -109,12 +109,12 @@ export class GameCanvas
                         continue
                     }
                     if (is_camp(c)) {
-                        renderer.circle(GameCanvas.get_grid_center(c), grid_size/2-10, 1, g.styles.STYLE_GREY)
+                        renderer.circle(GameCanvas.get_grid_center(c), gs/2-offset, 1, g.styles.STYLE_GREY)
                     }
                     else {
                         renderer.rectangle(
-                            new Position(i * grid_size+10, j * grid_size+10),
-                            grid_size-20, grid_size-20, 1, g.styles.STYLE_GREY)
+                            new Position(i * gs + offset, j * gs + offset),
+                            gs - 2*offset, gs - 2*offset, 1, g.styles.STYLE_GREY)
                     }
                 }
             }
@@ -125,7 +125,7 @@ export class GameCanvas
     {
         let center = GameCanvas.get_grid_center(coordinate)
         let p: number, q: number
-        let half_grid = g.settings.grid_size / 2 - 15 + size
+        let half_grid = g.grid_size / 2 - 15 + size
         if (!style)
         {
             style = g.styles.STYLE_BLACK
@@ -154,7 +154,7 @@ export class GameCanvas
     {
         let center = GameCanvas.get_grid_center(coordinate)
         let p: number, q: number
-        let half_grid = g.settings.grid_size / 2 - 10
+        let half_grid = g.grid_size / 2 - 10
         let style = g.styles.STYLE_RED
         for ([p, q] of [[-1, -1], [-1, 1], [1, -1], [1, 1]])
         {
@@ -185,7 +185,7 @@ export class GameCanvas
 
     mark_this_grid(center: Position, color: string, reverse: boolean = false)
     {
-        let pos = new Position(center.x, center.y - g.settings.grid_size / 4 - 10);
+        let pos = new Position(center.x, center.y - g.grid_size / 4 - 10);
         let size = 7;
         let tip_y = 0;
         let bottom_y = -size;

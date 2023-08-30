@@ -18,20 +18,23 @@ span {
     display: flex;
     flex-direction: row;
 }
-#hall-panel {
+
+.panel {
+    margin-left: 20px;
     margin-right: 20px;
     width: 240px;
+    max-width: 240px;
     height: 720px;
     align-self: flex-start;
     border-style: dashed;
     border-width: 1px;
     margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    user-select: none;
 }
-#place-holder {
-    width: 240px;
-    height: 720px;
-    align-self: flex-end;
-}
+
 #animate-transparent {
     opacity: 0.3;
 }

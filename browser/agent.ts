@@ -8,7 +8,6 @@ import { event_box } from "./ui/ui"
 export interface IServerAgent
 {
     submit_move(move: Move): void
-    //new_game(name: string): void
     destroy(): void
 }
 
@@ -16,7 +15,6 @@ abstract class GameAgent implements IServerAgent
 {
     constructor(protected context: GameContext) {}
     abstract submit_move(move: Move): void
-    //abstract new_game(_: string): void
     destroy(): void {}
 }
 
@@ -26,7 +24,7 @@ export class LayoutAgent extends GameAgent
     {
         super(context)
         this.context.prepare_layout()
-        this.context.status = GameContextStatus.WaitForPlayer
+        this.context.status = GameContextStatus.NotStarted
         event_box.emit("refresh ui", null)
     }
     
