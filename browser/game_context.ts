@@ -118,7 +118,7 @@ export class GameContext
     // }
 }
 
-export type GameMode = 'layout' | 'online'
+export type GameMode = 'layout' | 'match' | 'observer'
 
 export class GameUiFacade{
     game_mode: GameMode = 'layout'
@@ -141,15 +141,15 @@ export class GameUiFacade{
         this.agent = new LayoutAgent(this.context)
     }
 
-    online_mode(session_id: SessionId){
+    online_mode(session_id: SessionId, player_name: string){
         if (!this.hall) return
         this.destroy_agent()
-        this.game_mode = 'online'
-        this.agent = new OnlineAgent(this.context, session_id, this.hall.username)
+        this.game_mode = this.hall.username == player_name ? 'match' : 'observer'
+        this.agent = new OnlineAgent(this.context, session_id, this.hall.username, player_name)
     }
 
     current_player(): Player {
-        if (this.game_mode == 'online') {
+        if (this.game_mode == 'match' || this.game_mode == 'observer') {
             return (<OnlineAgent>this.agent).playing_as
         }
         return Player.P1
@@ -170,12 +170,6 @@ export class GameUiFacade{
         this.hall = new Hall(name, this)
     }
 
-    watch(name: string) {
-        Net.watch(name, (session_id: string)=>{
-            this.online_mode(session_id)
-        }, ()=>{console.log('fail')})
-    }
-
     current_layout(): PlayerLayout | undefined {
         let layout = this.context.present.get_layout(Player.P1)
         if (layout == undefined) {
@@ -184,6 +178,13 @@ export class GameUiFacade{
             this.saved_layout = layout
         }
         return layout
+    }
+
+    current_session(): SessionId | undefined {
+        if (this.game_mode == 'match' || this.game_mode == 'observer') {
+            return (<OnlineAgent>this.agent).session_id
+        }
+        return undefined
     }
 
     send_challenge(name: string) {

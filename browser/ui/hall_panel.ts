@@ -1,5 +1,5 @@
 import { g } from '../../common/global'
-import { UserStatus } from '../../common/protocol'
+import { SessionId } from '../../common/protocol'
 import { GameUiFacade } from '../game_context'
 import { HallStatus } from '../hall'
 import { DomHelper, IComponent } from './dom_helper'
@@ -36,8 +36,7 @@ export class HallPanel implements IComponent
         })
     }
 
-    render()
-    {
+    render(){
         this.dom_element.innerHTML = ""
         let game = this.game
         if (game.hall != null) {
@@ -67,6 +66,8 @@ export class HallPanel implements IComponent
                     for (let name in game.hall.info.users) {
                         this.dom_element.appendChild(
                             this.create_item(
+                                game.hall.username,
+                                game.current_session(),
                                 name, game.hall.info.users[name],
                                 game.hall.info.challengers.find((n) => n == name) != undefined,
                                 game.hall.info.challenging == name))
@@ -94,17 +95,20 @@ export class HallPanel implements IComponent
             name.onfocus = () => { name.select() }
             name.style.width = "80px"
             name.style.resize = "none"
-            name.onkeyup = () => {
-                login.disabled = name.value.length == 0
+
+            function try_login() {
+                let v = name.value.trim()
+                if (v) game.initialize_hall(v)
+            }
+            name.onkeyup = (event) => {
+                if (event.key == 'Enter') try_login()
+                login.disabled = name.value.trim().length == 0
             }
 
             let login = DomHelper.create_button()
             login.innerText = "Login"
             login.disabled = true
-            login.onclick = () => { 
-                let n = name.value
-                if (n) game.initialize_hall(n)
-            }
+            login.onclick = try_login
             div.appendChild(name)
             div.appendChild(btn_div)
             btn_div.appendChild(login)
@@ -112,10 +116,11 @@ export class HallPanel implements IComponent
         }
     }
 
-    create_item(name: string, status: UserStatus, is_challenger: boolean, challenging: boolean): HTMLElement {
-        let game = this.game
+    create_item(my_name: string, my_session: SessionId | undefined, 
+                name: string, session: SessionId | null, 
+                is_challenger: boolean, challenging: boolean): HTMLElement {
         let status_info
-        if (status == UserStatus.Idle) {
+        if (session == null) {
             status_info = "Idle"
         } else {
             status_info = "Playing"
@@ -143,17 +148,31 @@ export class HallPanel implements IComponent
             borderRadius: '3px',
             padding: '2px',
             fontWeight: 'bold'}))
-        if (game.hall && game.hall.username != name) {
-            let action = DomHelper.create_button({display: 'flex', alignSelf: 'center', flexDirection: 'row-reverse'})
+   
+        let action = DomHelper.create_button({display: 'flex', alignSelf: 'center', flexDirection: 'row-reverse'})
+        action.innerText = ''
+
+        if (my_session) {
+            if (my_name == name) {
+                action.innerText = "Leave"
+                action.onclick = () => {
+                    this.game.layout_mode()
+                    this.render()
+                }
+            } else if (session == my_session) {
+                action.innerText = 'Playing'
+                action.disabled = true
+            } 
+        } else if (!my_session && my_name != name) {
             if (is_challenger) {
                 action.innerText = "Accept"
                 action.onclick = () => {
                     action.innerText = "Accepting"
                     action.disabled = true
-                    game.accept_challenge(name)
+                    this.game.accept_challenge(name)
                 }
             } else {
-                if (status == UserStatus.Idle) {
+                if (session == null) {
                     if (challenging) {
                         action.innerText = "Challenging"
                         action.disabled = true
@@ -162,24 +181,29 @@ export class HallPanel implements IComponent
                         action.onclick = () => {
                             action.innerText = "Challenging"
                             action.disabled = true
-                            game.send_challenge(name)
+                            this.game.send_challenge(name)
                         }
                     }
                 } else {
                     action.innerText = "Watch"
-                    action.onclick = () => { 
-                        game.watch(name)
+                    action.onclick = () => {
+                        action.innerText = 'Watching'
+                        action.disabled = true
+                        this.game.online_mode(session, name)
                     }
                 }
             }
-            let div3 = DomHelper.create_div({
-                display: 'flex',
-                flex: 1,
-                flexDirection: 'row-reverse',
-            })
-            div3.appendChild(action)
-            div2.appendChild(div3)
         }
+        
+        let div3 = DomHelper.create_div({
+            display: 'flex',
+            flex: 1,
+            flexDirection: 'row-reverse',
+        })
+        if (action.innerText) {
+            div3.appendChild(action)
+        }
+        div2.appendChild(div3)
         div.appendChild(div2)
         return div
     }

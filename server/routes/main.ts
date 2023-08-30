@@ -8,7 +8,6 @@ router.get('/session/:id/game', controller.get_game)
 
 router.post('/hall/:user/challenge', controller.send_challenge)
 router.post('/hall/:user/accept', controller.accept_challenge)
-router.post('/hall/watch/:user', controller.watch)
 router.post('/session/:id/game', controller.submit_move)
 
 export default router

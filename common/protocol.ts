@@ -1,14 +1,10 @@
 import { Player, Players} from "./entity"
 
 export type SessionId = string
-export enum UserStatus {
-    Idle,
-    InGame
-}
 
 export const res_hall_full = 'hall is full'
 export type HallDigest = {
-    users: {[key: string]: UserStatus}
+    users: {[key: string]: SessionId | null}
     challengers: string[]
     challenging: string | null
     session: string | null

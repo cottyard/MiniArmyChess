@@ -46,13 +46,14 @@ export class OnlineAgent extends GameAgent
     playing_as: Player = Player.P1
     opponent_name: string | null = null
 
-    constructor(context: GameContext, public session_id: string, public player_name: string)
+    constructor(context: GameContext, public session_id: string, public user: string, public player_name: string)
     {
         super(context)
         this.context.status = GameContextStatus.NotStarted
         event_box.emit("refresh ui", null)
 
         this.query_handle = setInterval(this.pull_session.bind(this), session_signal_interval)
+        this.pull_session()
     }
 
     destroy(): void {
@@ -60,14 +61,13 @@ export class OnlineAgent extends GameAgent
     }
 
     pull_session(): void {
-        Net.get_session(this.session_id, this.player_name, this.wait_session.bind(this), ()=>{
+        Net.get_session(this.session_id, this.user, this.player_name, this.wait_session.bind(this), ()=>{
             console.log('no session', this.session_id)
         })
     }
 
     wait_session(digest: string){
         let session_digest: SessionDigest = JSON.parse(digest)
-        
         if (session_digest.last_update != this.session_timestamp)
         {
             this.playing_as = session_digest.as
@@ -96,7 +96,6 @@ export class OnlineAgent extends GameAgent
     }
 
     load_game(on_success: () => void){
-        if (this.context.status == GameContextStatus.Loading) return
         this.context.status = GameContextStatus.Loading
         event_box.emit("refresh ui", null)
         console.log('loading from', this.session_id)

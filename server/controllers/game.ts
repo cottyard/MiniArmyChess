@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { Players, Player, Move, which_player, opponent } from '../../common/entity'
 import { GameRound, PlayerLayout } from '../../common/game_round'
-import { UserStatus, HallDigest, hall_signal_interval, res_hall_full, SessionDigest, find_player, session_signal_interval, SessionId } from '../../common/protocol'
+import { HallDigest, hall_signal_interval, res_hall_full, SessionDigest, find_player, session_signal_interval, SessionId } from '../../common/protocol'
 
 type TimeStamp = number
 class IdGenerator<T>{
@@ -48,16 +48,16 @@ function hall_digest(name: string): HallDigest {
             }
         }
     }
-    let sessionId = null
+    let session_id = null
     if (user_session.has(name)) {
-        sessionId = user_session.get(name)!.id
+        session_id = user_session.get(name)!.id
     }
 
     let digest: HallDigest = {
         users: {},
         challengers: challengers,
         challenging: challenges.has(name) ? challenges.get(name)![0] : null,
-        session: sessionId
+        session: session_id
     }
     let now = Date.now()
     for (let user of user_heartbeat.keys()) {
@@ -66,7 +66,11 @@ function hall_digest(name: string): HallDigest {
             signout_user(user)
             continue
         }
-        digest.users[user] = user_session.has(user) ? UserStatus.InGame : UserStatus.Idle
+        let sid: SessionId | null = null 
+        if (user_session.has(user)) {
+            sid = user_session.get(user)!.id
+        }
+        digest.users[user] = sid
     }
     return digest
 }
@@ -201,18 +205,19 @@ function recycle_sessions() {
 
 const get_session = async (req: Request, res: Response, next: NextFunction) => {
     let id: string = req.params.id
+    let player_name: string = <string>req.query.player
     let name: string = <string>req.query.user
     let session = sessions.get(id)
     if (!session) {
         return res.sendStatus(404)
     }
-
-    user_session.set(name, new UserSession(id))
     session.touch()
-    
+    if (name == player_name) {
+        user_session.set(name, new UserSession(id))    
+    }
     recycle_sessions()
 
-    let player = find_player(session.players_name, name)
+    let player = find_player(session.players_name, player_name)
     let opponent_name = session.players_name[opponent(player)]
 
     let digest: SessionDigest = {
@@ -242,7 +247,13 @@ const submit_move = async (req: Request, res: Response, next: NextFunction) => {
 
     let session = sessions.get(id)
     if (!session) return res.sendStatus(404)
-    if (session.update(find_player(session.players_name, name), move, time)) {
+    let player
+    try {
+       player = find_player(session.players_name, name)
+    } catch {
+        return res.sendStatus(400)
+    }
+    if (session.update(player, move, time)) {
         return res.sendStatus(200)
     } else {
         return res.sendStatus(400)

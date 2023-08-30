@@ -35,7 +35,7 @@ export class Hall {
                 this.session = this.info.session
                 if (this.session) {
                     console.log('starting session', this.session)
-                    this.game.online_mode(this.session)
+                    this.game.online_mode(this.session, this.username)
                 }
             }
             event_box.emit("refresh hall", null)

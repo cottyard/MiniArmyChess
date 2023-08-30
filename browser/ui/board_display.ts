@@ -182,10 +182,18 @@ export class BoardDisplay implements IComponent
     }
 
     update_display(){
-        this.mode = this.game.game_mode == 'layout' ? 'layout' : 'game'
-        if (this.game.context.status == GameContextStatus.WaitForPlayer) {
+        if (this.game.game_mode == 'layout') {
+            this.mode = 'layout'
             this.unfreeze_selection()
+        } else if (this.game.game_mode == 'match') {
+            this.mode = 'game'
+            if (this.game.context.status == GameContextStatus.WaitForPlayer) {
+                this.unfreeze_selection()
+            } else {
+                this.freeze_selection()
+            }
         } else {
+            this.mode = 'observe'
             this.freeze_selection()
         }
         this.perspective = this.game.current_player()
@@ -202,7 +210,7 @@ export class BoardDisplay implements IComponent
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
 
-        if (this.mode == 'game') {
+        if (this.mode == 'game' || this.mode == 'observe') {
             let gi = group_indicator_position
             for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
                 gi = rotate_counter_clockwise(gi)

@@ -63,24 +63,20 @@ export class Net
         req.send()
     }
     
-    static query_hall(name: string, next: CallBack, fail: ErrorCallBack) {
-        this.remote_get(`hall/${name}`, next, fail, fail)
+    static query_hall(user: string, next: CallBack, fail: ErrorCallBack) {
+        this.remote_get(`hall/${user}`, next, fail, fail)
     }
 
-    static send_challenge(name: string, other: string, layout: string, next: CallBack, fail: ErrorCallBack) {
-        this.remote_post(`hall/${name}/challenge?user=${other}`, layout, next, fail, fail)
+    static send_challenge(user: string, other: string, layout: string, next: CallBack, fail: ErrorCallBack) {
+        this.remote_post(`hall/${user}/challenge?user=${other}`, layout, next, fail, fail)
     }
 
-    static accept_challenge(name: string, other: string, layout: string, next: CallBack, fail: ErrorCallBack) {
-        this.remote_post(`hall/${name}/accept?user=${other}`, layout, next, fail, fail)
+    static accept_challenge(user: string, other: string, layout: string, next: CallBack, fail: ErrorCallBack) {
+        this.remote_post(`hall/${user}/accept?user=${other}`, layout, next, fail, fail)
     }
 
-    static watch(other: string, next: CallBack, fail: ErrorCallBack) {
-        this.remote_post(`hall/watch/${other}`, '', next, fail, fail)
-    }
-
-    static get_session(id: string, name: string, next: CallBack, fail: ErrorCallBack) {
-        this.remote_get(`session/${id}?user=${name}`, next, fail, ()=>{})
+    static get_session(id: string, user: string, player_name: string, next: CallBack, fail: ErrorCallBack) {
+        this.remote_get(`session/${id}?user=${user}&player=${player_name}`, next, fail, ()=>{})
     }
 
     static get_game(id: string, next: CallBack, fail: ErrorCallBack) {
@@ -89,14 +85,14 @@ export class Net
 
     static submit_move(
         session: string,
-        name: string,
+        user: string,
         move: string, 
         milliseconds_consumed: number, 
         next: CallBack,
         fail: ErrorCallBack)
     {
         this.remote_post(
-            `session/${session}/game?user=${name}&time=${milliseconds_consumed}`,
+            `session/${session}/game?user=${user}&time=${milliseconds_consumed}`,
             move,
             next, 
             fail,
