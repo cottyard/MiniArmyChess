@@ -74,7 +74,7 @@ export class StatusBar implements IComponent
         let observation_message = ' '
         if (this.cursor) {
             let unit = this.game.context.present.board.units.at(this.cursor)
-            if (unit && unit.owner == this.game.current_player()) {
+            if (unit && unit.owner != this.game.current_player()) {
                 observation_message = observation_literal(unit)
             }
         }
