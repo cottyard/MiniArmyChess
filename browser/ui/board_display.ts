@@ -1,4 +1,4 @@
-import { GameUiFacade } from '../game_context'
+import { GameContextStatus, GameUiFacade } from '../game_context'
 import { GameCanvas, Position } from './canvas'
 import { CanvasUnitFactory, PaintMode } from './canvas_entity'
 import { GameBoard, Rule } from '../../common/rule'
@@ -9,7 +9,7 @@ import { event_box } from './ui'
 
 const group_indicator_position = new Position(7.5*g.settings.grid_size, g.settings.grid_size)
 
-type DisplayMode = 'layout' | 'game'
+type DisplayMode = 'layout' | 'game' | 'observe'
 
 export class BoardDisplay implements IComponent
 {
@@ -167,7 +167,7 @@ export class BoardDisplay implements IComponent
                     this.selected = null
                 }
             }   
-        } else {
+        } else if (this.mode == 'layout') {
             if (this.selected == null){
                 if (unit == null) return
                 this.selected = c
@@ -183,6 +183,11 @@ export class BoardDisplay implements IComponent
 
     update_display(){
         this.mode = this.game.game_mode == 'layout' ? 'layout' : 'game'
+        if (this.game.context.status == GameContextStatus.WaitForPlayer) {
+            this.unfreeze_selection()
+        } else {
+            this.freeze_selection()
+        }
         this.perspective = this.game.current_player()
         this.displaying_board = this.game.context.present.board
     }

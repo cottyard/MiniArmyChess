@@ -1,5 +1,5 @@
 import { Board, create_board } from "./board";
-import { Group, Move, Player, Unit, UnitConstructor, all_unit_types, which_groups } from "./entity";
+import { Group, Move, Player, Unit, UnitConstructor, all_unit_types, which_groups, which_player } from "./entity";
 import { ISerializable, randint } from "./language";
 import { GameBoard, Rule, starting_coordinates_by_group, unit_count_by_type, unit_count_per_group } from "./rule";
 
@@ -8,7 +8,8 @@ export class InsufficientSupply extends Error {}
 export enum GameStatus{
     Ongoing,
     WonByPlayer1,
-    WonByPlayer2
+    WonByPlayer2,
+    Tied
 }
 
 export class GroupLayout implements ISerializable{
@@ -42,42 +43,46 @@ export class PlayerLayout implements ISerializable {
 
 export class GameRound implements ISerializable
 {
-    private _status: GameStatus = GameStatus.Ongoing
     private constructor(
         readonly round_count: number,
         readonly board: GameBoard,
         readonly group_to_move: Group,
         readonly last_move: Move | null,
+        readonly status: GameStatus
         )
-    {
-    }
+    {}
 
     proceed(move: Move): GameRound
     {
         if (!Rule.validate_move(this.board, this.group_to_move, move)) throw Error("invalid move")
         let next_board = Rule.proceed(this.board, move)
+        let next_group = this.group_to_move
 
+        let status: GameStatus = GameStatus.Ongoing
         let p1_alive = Rule.alive(next_board, which_groups[Player.P1][0]) 
-                    || Rule.alive(next_board, which_groups[Player.P1][1])
+                || Rule.alive(next_board, which_groups[Player.P1][1])
         let p2_alive = Rule.alive(next_board, which_groups[Player.P2][0]) 
-                    || Rule.alive(next_board, which_groups[Player.P2][1])
+                || Rule.alive(next_board, which_groups[Player.P2][1])
 
         if (!p1_alive || !p2_alive) {
-            if (!p1_alive && !p2_alive) {
-                if (this.group_to_move == 0 || this.group_to_move == 2) {
-                    this._status = GameStatus.WonByPlayer1
+        if (!p1_alive && !p2_alive) {
+                if (which_player(this.group_to_move) == Player.P1) {
+                    status = GameStatus.WonByPlayer1
                 } else {
-                    this._status = GameStatus.WonByPlayer2
+                    status = GameStatus.WonByPlayer2
                 }
             } else if (p1_alive) {
-                this._status = GameStatus.WonByPlayer1
+                status = GameStatus.WonByPlayer1
             } else {
-                this._status = GameStatus.WonByPlayer2
+                status = GameStatus.WonByPlayer2
             }
         }
 
-        let next_group = this.group_to_move
-        if (this._status == GameStatus.Ongoing) {   
+        if (this.round_count >= 99) {
+            status = GameStatus.Tied
+        }
+
+        if (status == GameStatus.Ongoing) {
             for (let i = 1; i < 4; ++i) {
                 let g = (this.group_to_move + i) % 4 as Group
                 if (Rule.has_valid_move(next_board, g)) {
@@ -87,12 +92,12 @@ export class GameRound implements ISerializable
             }
             if (next_group == this.group_to_move) throw Error("no living group")
         }
-
         return new GameRound(
             this.round_count + 1,
             next_board,
             next_group,
-            move)
+            move,
+            status)
     }
 
     modify_layout(move: Move): boolean {
@@ -120,11 +125,6 @@ export class GameRound implements ISerializable
             }
         }
         return true
-    }
-
-    get status(): GameStatus
-    {
-        return this._status
     }
 
     validate_move(move: Move): boolean{
@@ -168,7 +168,7 @@ export class GameRound implements ISerializable
             p2.player = Player.P2
             this.set_out(board, p2)
         }
-        return new GameRound(0, new GameBoard(board), 0, null)
+        return new GameRound(0, new GameBoard(board), 0, null, GameStatus.Ongoing)
     }
 
     serialize(): string {
@@ -176,18 +176,20 @@ export class GameRound implements ISerializable
             this.round_count, 
             this.board.serialize(),
             this.group_to_move,
-            this.last_move == null? null : this.last_move.serialize()
+            this.last_move == null? null : this.last_move.serialize(),
+            this.status
         ])
     }
 
     static deserialize(payload: string): GameRound
     {
-        let [round_count, board_payload, group_to_move, last_move_payload] = JSON.parse(payload)
+        let [round_count, board_payload, group_to_move, last_move_payload, status] = JSON.parse(payload)
         return new GameRound(
             round_count, 
             GameBoard.deserialize(board_payload), 
             group_to_move,
-            last_move_payload == null ? null : Move.deserialize(last_move_payload))
+            last_move_payload == null ? null : Move.deserialize(last_move_payload),
+            status)
     }
 }
 

@@ -1,6 +1,6 @@
 //import { Player, Players } from "../../common/entity"
 import { Coordinate, Unit} from "../../common/entity"
-import { GameUiFacade } from "../game_context"
+import { GameContextStatus, GameUiFacade } from "../game_context"
 import { BoardDisplay } from "./board_display"
 import { type_to_literal } from "./canvas_entity"
 import { IComponent, DomHelper } from "./dom_helper"
@@ -9,6 +9,17 @@ function observation_literal(unit: Unit): string {
     return unit.possible_types().map((id)=>type_to_literal(id)).join(' ')
 }
 
+const status_messages = new Map<GameContextStatus, string>([
+    [GameContextStatus.NotStarted, '布局'],
+    [GameContextStatus.WaitForPlayer, '你走'],
+    [GameContextStatus.Submitting, '正在提交'],
+    [GameContextStatus.WaitForOpponent, '等对手走'],
+    [GameContextStatus.Loading, '正在载入'],
+    [GameContextStatus.Victorious, '你赢了'],
+    [GameContextStatus.Defeated, '你输了'],
+    [GameContextStatus.Tied, '平局'],
+])
+    
 export class StatusBar implements IComponent
 {
     cursor: Coordinate | undefined = undefined
@@ -49,35 +60,30 @@ export class StatusBar implements IComponent
             `Step ${ round_number }`,{
                 'text-align': 'left',
                 fontWeight: "bold",
-                flexGrow: 1,
+                flex: 1,
             }))
 
-        // if (this.game.context.present.status != GameStatus.Ongoing) {
-        //     this.dom_element.appendChild(DomHelper.create_text(
-        //         "End",{
-        //             'text-align': 'center',
-        //             fontWeight: "bold",
-        //             flexGrow: 1,
-        //         }))
-        // }
+        let status_message = status_messages.get(this.game.context.status)!
         this.dom_element.appendChild(DomHelper.create_text(
-            this.game.context.present.status.toString() ,{
+            status_message ,{
                 'text-align': 'center',
                 fontWeight: "bold",
-                flexGrow: 1,
+                flex: 1,
             }))
 
+        let observation_message = ' '
         if (this.cursor) {
             let unit = this.game.context.present.board.units.at(this.cursor)
-            if (unit == null) return
-            if (unit.owner == this.game.current_player()) return
-            this.dom_element.appendChild(DomHelper.create_text(
-                observation_literal(unit),{
-                    'text-align': 'right',
-                    flexGrow: 1,
-                }))
+            if (unit && unit.owner == this.game.current_player()) {
+                observation_message = observation_literal(unit)
+            }
         }
-    }
+        this.dom_element.appendChild(DomHelper.create_text(
+            observation_message ,{
+                'text-align': 'right',
+                flex: 1,
+            }))
+}
 
     // timestamp(consumed: number)
     // {

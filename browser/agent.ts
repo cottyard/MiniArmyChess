@@ -70,7 +70,6 @@ export class OnlineAgent extends GameAgent
         
         if (session_digest.last_update != this.session_timestamp)
         {
-            //let player = find_player(session_digest.players, this.player_name)
             this.playing_as = session_digest.as
             this.opponent_name = session_digest.opponent
             this.load_game(() => {this.session_timestamp = session_digest.last_update})
@@ -90,23 +89,21 @@ export class OnlineAgent extends GameAgent
             move.serialize(),
             msec_consumed, 
             (_: string) => {
-                this.context.status = GameContextStatus.WaitForOpponent
-                event_box.emit("refresh ui", null)
                 this.pull_session()
             }, () => {
                 console.log('submit fail')
             })
     }
 
-    load_game(on_success: () => void)
-    {
+    load_game(on_success: () => void){
         if (this.context.status == GameContextStatus.Loading) return
         this.context.status = GameContextStatus.Loading
+        event_box.emit("refresh ui", null)
         console.log('loading from', this.session_id)
         Net.get_game(this.session_id, (serialized_game) =>
         {
             let game_payload = JSON.parse(serialized_game)
-            this.context.new_round(GameRound.deserialize(game_payload))
+            this.context.new_round(GameRound.deserialize(game_payload), this.playing_as)
             on_success()
             event_box.emit("refresh ui", null)
         }, () => {})

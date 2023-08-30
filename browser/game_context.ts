@@ -1,5 +1,5 @@
 import { IServerAgent, LayoutAgent, OnlineAgent } from "./agent"
-import { Move, Player, Players } from "../common/entity"
+import { Move, Player, Players, which_player } from "../common/entity"
 import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game_round"
 import { Hall } from "./hall"
 import { Net } from "./net"
@@ -7,9 +7,7 @@ import { SessionId } from "../common/protocol"
 
 export enum GameContextStatus
 {
-    InMenu,
     NotStarted,
-    InQueue,
     WaitForPlayer,
     Submitting,
     WaitForOpponent,
@@ -22,51 +20,37 @@ export enum GameContextStatus
 export class GameContext
 {
     private rounds: GameRound[] = []
-    
-    players_name: Players<string> = {
-        [Player.P1]: 'player 1',
-        [Player.P2]: 'player 2'
-    }
-
-    status: GameContextStatus = GameContextStatus.InMenu
+    status: GameContextStatus = GameContextStatus.NotStarted
     consumed_msec: Players<number> = Players.create(() => 0)
     round_begin_time: number = Date.now()
 
-    private _player: Player
-
-    constructor(){
-        this._player = Player.P1
-    }
-
-    get player(){
-        return this._player
-    }
-
-    set player(value: Player){
-        this._player = value
-    }
-
-    new_round(round: GameRound): void {
+    new_round(round: GameRound, player: Player): void {
         this.rounds.push(round)
         this.round_begin_time = Date.now()
-        this.update_status()
+        this.update_status(player)
     }
 
-    update_status(): void{
-        switch (this.present.status)
-        {
+    update_status(player: Player): void{
+        switch (this.present.status){
+            case GameStatus.Ongoing:
+                if (which_player(this.present.group_to_move) == player) {
+                    this.status = GameContextStatus.WaitForPlayer
+                } else {
+                    this.status = GameContextStatus.WaitForOpponent
+                }
+                break
             case GameStatus.WonByPlayer1:
-                this.status = this.player == Player.P1 ? 
+                this.status = player == Player.P1 ? 
                               GameContextStatus.Victorious :
                               GameContextStatus.Defeated
                 break
             case GameStatus.WonByPlayer2:
-                this.status = this.player == Player.P2 ?
+                this.status = player == Player.P2 ?
                               GameContextStatus.Victorious : 
                               GameContextStatus.Defeated
                 break
-            case GameStatus.Ongoing:
-                this.status = GameContextStatus.WaitForPlayer
+            case GameStatus.Tied:
+                this.status = GameContextStatus.Tied
                 break
             default:
                 throw new Error("Unknown status")
@@ -96,52 +80,42 @@ export class GameContext
         return this.rounds[this.rounds.length - 1]
     }
 
-    is_in_menu(): boolean 
-    {
-        return this.status == GameContextStatus.InMenu
-    }
+    // is_playing(): boolean
+    // {
+    //     return [
+    //         GameContextStatus.WaitForOpponent,
+    //         GameContextStatus.Submitting,
+    //         GameContextStatus.WaitForPlayer,
+    //         GameContextStatus.Loading,
+    //     ].indexOf(this.status) > -1
+    // }
 
-    is_playing(): boolean
-    {
-        return [
-            GameContextStatus.WaitForOpponent,
-            GameContextStatus.Submitting,
-            GameContextStatus.WaitForPlayer,
-            GameContextStatus.Loading,
-        ].indexOf(this.status) > -1
-    }
+    // is_waiting(): boolean
+    // {
+    //     return [
+    //         GameContextStatus.WaitForOpponent,
+    //         GameContextStatus.WaitForPlayer
+    //     ].indexOf(this.status) > -1
+    // }
 
-    is_waiting(): boolean
-    {
-        return [
-            GameContextStatus.WaitForOpponent,
-            GameContextStatus.WaitForPlayer
-        ].indexOf(this.status) > -1
-    }
+    // is_finished(): boolean
+    // {
+    //     return [
+    //         GameContextStatus.Victorious,
+    //         GameContextStatus.Defeated,
+    //         GameContextStatus.Tied
+    //     ].indexOf(this.status) > -1
+    // }
 
-    is_in_queue(): boolean
-    {
-        return this.status == GameContextStatus.InQueue
-    }
+    // is_not_started(): boolean
+    // {
+    //     return this.status == GameContextStatus.NotStarted
+    // }
 
-    is_finished(): boolean
-    {
-        return [
-            GameContextStatus.Victorious,
-            GameContextStatus.Defeated,
-            GameContextStatus.Tied
-        ].indexOf(this.status) > -1
-    }
-
-    is_not_started(): boolean
-    {
-        return this.status == GameContextStatus.NotStarted
-    }
-
-    is_first_round(): boolean
-    {
-        return this.last == null
-    }
+    // is_first_round(): boolean
+    // {
+    //     return this.last == null
+    // }
 }
 
 export type GameMode = 'layout' | 'online'
