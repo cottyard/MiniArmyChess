@@ -9,7 +9,7 @@ import { event_box } from './ui'
 
 const group_indicator_position = new Position(7.5*g.grid_size, g.grid_size)
 
-type DisplayMode = 'layout' | 'game' | 'observe'
+type DisplayMode = 'layout' | 'game' | 'observe' | 'replay'
 
 export class BoardDisplay implements IComponent
 {
@@ -197,8 +197,11 @@ export class BoardDisplay implements IComponent
             } else {
                 this.freeze_selection()
             }
-        } else {
+        } else if (this.game.game_mode == 'observer') {
             this.mode = 'observe'
+            this.freeze_selection()
+        } else {
+            this.mode = 'replay'
             this.freeze_selection()
         }
         this.perspective = this.game.current_player()
@@ -214,8 +217,10 @@ export class BoardDisplay implements IComponent
         this.canvas.clear_canvas(this.canvas.st_ctx)
         this.displaying_board.units.iterate_units((unit, coord) => {
             let mode = PaintMode.Normal
-            if (this.perspective != unit.owner && unit.possible_types().length > 1) {
-                mode = PaintMode.Hidden
+            if (this.mode != 'replay') {
+                if (this.perspective != unit.owner && unit.possible_types().length > 1) {
+                    mode = PaintMode.Hidden
+                }
             }
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
@@ -230,7 +235,7 @@ export class BoardDisplay implements IComponent
     }
 
     render_group_indicator() {
-        if (this.mode == 'game' || this.mode == 'observe') {
+        if (this.mode != 'layout') {
             let gi = group_indicator_position
             for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
                 gi = rotate_counter_clockwise(gi)

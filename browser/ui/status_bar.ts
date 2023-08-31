@@ -103,7 +103,7 @@ export class StatusBar implements IComponent
         let b2 = DomHelper.create_button({fontSize: '15px', margin: '1px'})
         b2.innerText = ">"
         b2.disabled = this.game.display_round == null 
-                   || this.game.display_round == this.game.context.rounds.length
+                   || this.game.display_round == this.game.context.rounds.length - 1
         b2.onclick = () => {
             if (this.game.display_round != null 
              && this.game.display_round < this.game.context.rounds.length - 1) {

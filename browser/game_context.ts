@@ -191,7 +191,7 @@ export class GameUiFacade{
     }
 
     current_session(): SessionId | undefined {
-        if (this.game_mode == 'match' || this.game_mode == 'observer') {
+        if (this.agent && (<Object>this.agent).hasOwnProperty('session_id')) {
             return (<OnlineAgent>this.agent).session_id
         }
         return undefined
