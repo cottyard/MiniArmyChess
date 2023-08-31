@@ -159,7 +159,7 @@ export class HallPanel implements IComponent
                 action.innerText = 'Playing'
                 action.disabled = true
             } 
-        } else if (!my_session && my_name != name) {
+        } else if (my_name != name) {
             if (is_challenger) {
                 action.innerText = "Accept"
                 action.onclick = () => {

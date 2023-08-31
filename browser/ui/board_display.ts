@@ -1,11 +1,12 @@
 import { GameContextStatus, GameUiFacade } from '../game_context'
 import { GameCanvas, Position } from './canvas'
 import { CanvasUnitFactory, PaintMode } from './canvas_entity'
-import { GameBoard, Rule } from '../../common/rule'
+import { Rule } from '../../common/rule'
 import { Coordinate, Group, Move, Player, which_player } from '../../common/entity'
 import { g } from '../../common/global'
 import { IComponent } from './dom_helper'
 import { event_box } from './ui'
+import { GameRound } from '../../common/game_round'
 
 const group_indicator_position = new Position(7.5*g.grid_size, g.grid_size)
 
@@ -21,8 +22,7 @@ export class BoardDisplay implements IComponent
     selected: Coordinate | null = null
     _selection_frozen: boolean = false
 
-    displaying_board: GameBoard
-    displaying_move: Move | null
+    displaying_round: GameRound
 
     blink = false
 
@@ -43,8 +43,7 @@ export class BoardDisplay implements IComponent
 
         this.canvas.paint_background()
 
-        this.displaying_board = this.game.context.present.board
-        this.displaying_move = null
+        this.displaying_round = this.game.context.present
 
         this.render_board()
         setInterval(() => {
@@ -151,8 +150,8 @@ export class BoardDisplay implements IComponent
         let c = this.get_coordinate(event)
         if (c == undefined) return
         this.hovering = c
-        let unit = this.game.context.present.board.units.at(c)
-        let current_group: Group | null = this.game.context.present.group_to_move
+        let unit = this.displaying_round.board.units.at(c)
+        let current_group: Group | null = this.displaying_round.group_to_move
         if (which_player(current_group) != this.perspective) {
             current_group = null
         }
@@ -207,15 +206,15 @@ export class BoardDisplay implements IComponent
         this.perspective = this.game.current_player()
         
         if (this.game.display_round == null) {
-            this.displaying_board = this.game.context.present.board
+            this.displaying_round = this.game.context.present
         } else {
-            this.displaying_board = this.game.context.rounds[this.game.display_round].board
+            this.displaying_round = this.game.context.rounds[this.game.display_round]
         }
     }
 
     render_board(){
         this.canvas.clear_canvas(this.canvas.st_ctx)
-        this.displaying_board.units.iterate_units((unit, coord) => {
+        this.displaying_round.board.units.iterate_units((unit, coord) => {
             let mode = PaintMode.Normal
             if (this.mode != 'replay') {
                 if (this.perspective != unit.owner && unit.possible_types().length > 1) {
@@ -225,7 +224,7 @@ export class BoardDisplay implements IComponent
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
 
-        let move = this.game.context.present.last_move
+        let move = this.displaying_round.last_move
         if (move) {
             this.canvas.paint_move_indicator(move.from)
             this.canvas.paint_move_indicator(move.to)
@@ -237,7 +236,7 @@ export class BoardDisplay implements IComponent
     render_group_indicator() {
         if (this.mode != 'layout') {
             let gi = group_indicator_position
-            for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
+            for (let g = 0; g < this.displaying_round.group_to_move; ++g) {
                 gi = rotate_counter_clockwise(gi)
             }
             if (this.blink) {
@@ -256,7 +255,7 @@ export class BoardDisplay implements IComponent
         if (this.selected){
             this.canvas.paint_grid_indicator(this.selected, g.styles.STYLE_BLACK, 4)
             if (this.mode == 'game') {
-                for (let c of Rule.get_move_options(this.game.context.present.board, this.selected).as_list()) {
+                for (let c of Rule.get_move_options(this.displaying_round.board, this.selected).as_list()) {
                     this.canvas.paint_grid_indicator(c, g.styles.STYLE_GREEN, 2, 10)
                 }
             }
