@@ -191,7 +191,7 @@ function recycle_sessions() {
     let now = Date.now()
     for (let name of user_session.keys()) {
         let us = user_session.get(name)!
-        if (now - us.last_access > session_signal_interval * 2) {
+        if (now - us.last_access > session_signal_interval * 4) {
             user_session.delete(name)
         }
     }

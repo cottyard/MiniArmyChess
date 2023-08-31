@@ -13,6 +13,7 @@ export enum HallStatus {
 export class Hall {
     info: HallDigest | null = null
     status: HallStatus = HallStatus.LoggedOut
+    // usage: detect session update and starts online game
     session: SessionId | null = null
     private query_handle: NodeJS.Timeout
 
@@ -32,8 +33,8 @@ export class Hall {
             this.info = res
             this.status = HallStatus.LoggedIn
             if (this.info && this.info.session != this.session) {
-                this.session = this.info.session
-                if (this.session) {
+                if (this.info.session) {
+                    this.session = this.info.session
                     console.log('starting session', this.session)
                     this.game.online_mode(this.session, this.username)
                 }

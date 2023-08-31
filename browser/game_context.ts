@@ -137,6 +137,7 @@ export class GameUiFacade{
 
     layout_mode() {
         this.destroy_agent()
+        console.log('layout')
         this.game_mode = 'layout'
         this.agent = new LayoutAgent(this.context)
     }
@@ -144,6 +145,7 @@ export class GameUiFacade{
     online_mode(session_id: SessionId, player_name: string){
         if (!this.hall) return
         this.destroy_agent()
+        console.log('online')
         this.game_mode = this.hall.username == player_name ? 'match' : 'observer'
         this.agent = new OnlineAgent(this.context, session_id, this.hall.username, player_name)
     }

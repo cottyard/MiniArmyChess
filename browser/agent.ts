@@ -71,7 +71,6 @@ export class OnlineAgent extends GameAgent
             this.playing_as = session_digest.as
             this.opponent_name = session_digest.opponent
             this.load_game(() => {this.session_timestamp = session_digest.last_update})
-            event_box.emit("refresh ui", null)
         }
     }
 
