@@ -47,6 +47,7 @@ export class OnlineAgent extends GameAgent
     constructor(context: GameContext, public session_id: string, public user: string, public player_name: string)
     {
         super(context)
+        this.context.prepare_layout()
         this.context.status = GameContextStatus.NotStarted
         event_box.emit("refresh ui", null)
 

@@ -19,7 +19,7 @@ const status_messages = new Map<GameContextStatus, string>([
     [GameContextStatus.Defeated, '你输了'],
     [GameContextStatus.Tied, '平局'],
 ])
-    
+
 export class StatusBar implements IComponent
 {
     cursor: Coordinate | undefined = undefined
@@ -28,10 +28,6 @@ export class StatusBar implements IComponent
         public board_display: BoardDisplay,
         public game: GameUiFacade)
     {
-        // setInterval(() =>
-        // {
-        //     this.render()
-        // }, 1000)
     }
 
     render(cursor: Coordinate | undefined = undefined)
@@ -54,16 +50,23 @@ export class StatusBar implements IComponent
         //     //     player == this.game.context.player
         //     // ))
         // }
-
-        let round_number = this.game.context.present.round_count
-        this.dom_element.appendChild(DomHelper.create_text(
+        let game_status = this.game.context.status
+        let round_number = this.game.display_round ? this.game.display_round - 1 : this.game.context.present.round_count
+        let div = DomHelper.create_div({
+            display: 'flex', 
+            flexDirection: 'row',
+            flex: 1})
+        let step = DomHelper.create_text(
             `Step ${ round_number }`,{
                 'text-align': 'left',
                 fontWeight: "bold",
-                flex: 1,
-            }))
-
-        let status_message = status_messages.get(this.game.context.status)!
+            })
+        div.appendChild(step)
+        if (this.game.context.is_finished()) {
+            div.appendChild(this.replayer())
+        }
+        this.dom_element.appendChild(div)
+        let status_message = status_messages.get(game_status)!
         this.dom_element.appendChild(DomHelper.create_text(
             status_message ,{
                 'text-align': 'center',
@@ -73,7 +76,7 @@ export class StatusBar implements IComponent
 
         let observation_message = ' '
         if (this.cursor) {
-            let unit = this.game.context.present.board.units.at(this.cursor)
+            let unit = this.board_display.displaying_board.units.at(this.cursor)
             if (unit && unit.owner != this.game.current_player()) {
                 observation_message = observation_literal(unit)
             }
@@ -83,7 +86,47 @@ export class StatusBar implements IComponent
                 'text-align': 'right',
                 flex: 1,
             }))
-}
+    }
+
+    replayer(): HTMLElement {
+        let div = DomHelper.create_div({marginLeft: '10px'})
+        let b1 = DomHelper.create_button({fontSize: '15px', margin: '3px'})
+        b1.innerText = "<"
+        b1.disabled = this.game.display_round == 1
+        b1.onclick = () => {
+            let this_round = this.game.display_round ?? this.game.context.rounds.length - 1
+            if (this_round > 1) {
+                this.game.replay_round(this_round - 1)
+            }
+        }
+
+        let b2 = DomHelper.create_button({fontSize: '15px', margin: '1px'})
+        b2.innerText = ">"
+        b2.disabled = this.game.display_round == null 
+                   || this.game.display_round == this.game.context.rounds.length
+        b2.onclick = () => {
+            if (this.game.display_round != null 
+             && this.game.display_round < this.game.context.rounds.length - 1) {
+                this.game.replay_round(this.game.display_round + 1)
+            }
+        }
+
+        let b3 = DomHelper.create_button({fontSize: '15px', margin: '1px'})
+        b3.innerText = "|<"
+        b3.disabled = b1.disabled
+        b3.onclick = () => {this.game.replay_round(1)}
+
+        let b4 = DomHelper.create_button({fontSize: '15px', margin: '3px'})
+        b4.innerText = ">|"
+        b4.disabled = b2.disabled
+        b4.onclick = () => {this.game.replay_round(this.game.context.rounds.length - 1)}
+
+        div.appendChild(b3)
+        div.appendChild(b1)
+        div.appendChild(b2)
+        div.appendChild(b4)
+        return div
+    }
 
     // timestamp(consumed: number)
     // {

@@ -171,6 +171,11 @@ export class GameRound implements ISerializable
         return new GameRound(0, new GameBoard(board), 0, null, GameStatus.Ongoing)
     }
 
+    static create_empty(): GameRound {
+        let board = create_board<Unit, UnitConstructor>(UnitConstructor)
+        return new GameRound(0, new GameBoard(board), 0, null, GameStatus.Ongoing)
+    }
+
     serialize(): string {
         return JSON.stringify([
             this.round_count, 

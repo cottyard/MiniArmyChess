@@ -43,7 +43,7 @@ export class Renderer implements IDisposable
         this.ctx.stroke();
     }
 
-    circle(position: Position, radius: number, width: number, fill_style: string | null = null): void
+    circle(position: Position, radius: number, width: number, fill_style: string | null = null, stroke: boolean = true): void
     {
         this.ctx.lineWidth = width;
         this.ctx.beginPath();
@@ -53,7 +53,7 @@ export class Renderer implements IDisposable
             this.set_fill_color(fill_style);
             this.ctx.fill();
         }
-        this.ctx.stroke();
+        if (stroke) this.ctx.stroke()
     }
 
     arc(position: Position, radius: number, angle: Angle, width: number): void

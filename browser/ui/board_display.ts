@@ -24,6 +24,8 @@ export class BoardDisplay implements IComponent
     displaying_board: GameBoard
     displaying_move: Move | null
 
+    blink = false
+
     constructor(public game: GameUiFacade)
     {
         this.canvas = new GameCanvas(
@@ -45,6 +47,10 @@ export class BoardDisplay implements IComponent
         this.displaying_move = null
 
         this.render_board()
+        setInterval(() => {
+            this.render_group_indicator()
+            this.blink = !this.blink
+        }, 1000)
     }
 
     set_perspective(player: Player): void {
@@ -196,7 +202,12 @@ export class BoardDisplay implements IComponent
             this.freeze_selection()
         }
         this.perspective = this.game.current_player()
-        this.displaying_board = this.game.context.present.board
+        
+        if (this.game.display_round == null) {
+            this.displaying_board = this.game.context.present.board
+        } else {
+            this.displaying_board = this.game.context.rounds[this.game.display_round].board
+        }
     }
 
     render_board(){
@@ -209,18 +220,26 @@ export class BoardDisplay implements IComponent
             this.canvas.paint_unit(CanvasUnitFactory(unit, mode), coord)
         })
 
+        let move = this.game.context.present.last_move
+        if (move) {
+            this.canvas.paint_move_indicator(move.from)
+            this.canvas.paint_move_indicator(move.to)
+        }
+
+        this.render_group_indicator()
+    }
+
+    render_group_indicator() {
         if (this.mode == 'game' || this.mode == 'observe') {
             let gi = group_indicator_position
             for (let g = 0; g < this.game.context.present.group_to_move; ++g) {
                 gi = rotate_counter_clockwise(gi)
             }
-            this.canvas.paint_group_indicator(gi)
-        }
-
-        let move = this.game.context.present.last_move
-        if (move) {
-            this.canvas.paint_move_indicator(move.from)
-            this.canvas.paint_move_indicator(move.to)
+            if (this.blink) {
+                this.canvas.paint_group_indicator(gi, true)
+            } else {
+                this.canvas.paint_group_indicator(gi)
+            }
         }
     }
 

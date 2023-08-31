@@ -4,6 +4,7 @@ import { GameRound, GameStatus, GroupLayout, PlayerLayout } from "../common/game
 import { Hall } from "./hall"
 import { Net } from "./net"
 import { SessionId } from "../common/protocol"
+import { event_box } from "./ui/ui"
 
 export enum GameContextStatus
 {
@@ -19,7 +20,7 @@ export enum GameContextStatus
 
 export class GameContext
 {
-    private rounds: GameRound[] = []
+    rounds: GameRound[] = []
     status: GameContextStatus = GameContextStatus.NotStarted
     consumed_msec: Players<number> = Players.create(() => 0)
     round_begin_time: number = Date.now()
@@ -57,13 +58,12 @@ export class GameContext
         }
     }
 
-    // new_game(p1: PlayerLayout, p2: PlayerLayout): void {
-    //     this.rounds = [ GameRound.new_game_by_layout(p1, p2) ]
-    //     this.consumed_msec = Players.create(() => 0)
-    // }
-
     prepare_layout(): void {
         this.rounds = [ GameRound.new_game_by_layout(new PlayerLayout(Player.P1, [new GroupLayout(), new GroupLayout()])) ]
+    }
+
+    prepare_empty(): void {
+        this.rounds = [ GameRound.create_empty() ]
     }
 
     get last(): GameRound | null
@@ -98,14 +98,13 @@ export class GameContext
     //     ].indexOf(this.status) > -1
     // }
 
-    // is_finished(): boolean
-    // {
-    //     return [
-    //         GameContextStatus.Victorious,
-    //         GameContextStatus.Defeated,
-    //         GameContextStatus.Tied
-    //     ].indexOf(this.status) > -1
-    // }
+    is_finished(): boolean{
+        return [
+            GameContextStatus.Victorious,
+            GameContextStatus.Defeated,
+            GameContextStatus.Tied
+        ].indexOf(this.status) > -1
+    }
 
     // is_not_started(): boolean
     // {
@@ -118,7 +117,7 @@ export class GameContext
     // }
 }
 
-export type GameMode = 'layout' | 'match' | 'observer'
+export type GameMode = 'layout' | 'match' | 'observer' | 'replay'
 
 export class GameUiFacade{
     game_mode: GameMode = 'layout'
@@ -126,6 +125,7 @@ export class GameUiFacade{
     agent: IServerAgent | null = null
     hall: Hall | null = null
     saved_layout: PlayerLayout | undefined = undefined
+    display_round: number | null = null // null means last round
 
     constructor(){}
 
@@ -139,6 +139,7 @@ export class GameUiFacade{
         this.destroy_agent()
         console.log('layout')
         this.game_mode = 'layout'
+        this.context = new GameContext()
         this.agent = new LayoutAgent(this.context)
     }
 
@@ -147,7 +148,14 @@ export class GameUiFacade{
         this.destroy_agent()
         console.log('online')
         this.game_mode = this.hall.username == player_name ? 'match' : 'observer'
+        this.context = new GameContext()
         this.agent = new OnlineAgent(this.context, session_id, this.hall.username, player_name)
+    }
+
+    replay_round(round: number) {
+        this.display_round = round
+        this.game_mode = 'replay'
+        event_box.emit("refresh ui", null)
     }
 
     current_player(): Player {

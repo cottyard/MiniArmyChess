@@ -175,11 +175,15 @@ export class GameCanvas
         }
     }
 
-    paint_group_indicator(position: Position)
+    paint_group_indicator(position: Position, erase: boolean = false)
     {
-        let size = 7
         using(new Renderer(this.st_ctx), (renderer) =>{
-            renderer.circle(position, size, 2, g.styles.STYLE_GREEN_LIGHT)
+            renderer.circle(
+                position, 
+                erase ? 10 : 7,
+                erase ? 0 : 2, 
+                erase ? g.styles.STYLE_WHITE : g.styles.STYLE_GREEN_LIGHT,
+                !erase)
         })
     }
 
